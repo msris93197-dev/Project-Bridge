@@ -12,10 +12,12 @@ Project Bridge is a web application built using MERN stack, designed to automate
   - [Professor Side Functionalities](#professor-side-functionalities)
   - [Student Side Functionalities](#student-side-functionalities)
   - [Admin Functionalities](#admin-functionalities)
-- [Installation and Setup](#installation-and-setup)
+- [Live Demo](#live-demo)
+- [What is in this version](#what-is-in-this-version)
 - [Installation and Setup](#installation-and-setup)
 - [Usage](#usage)
-- [Contributing](#contributing)
+- [Tests](#tests)
+- [Credits](#credits)
 
 ## Problem Statement
 
@@ -108,28 +110,86 @@ The web application supports three types of users: Professor, Student, and Admin
 </details>
 
 
+## Live Demo
+
+**Live app:** _add your deployed URL here_ — use the **Try a demo** tiles on the login page to explore each role with sample data (no Google account needed).
+
+## What is in this version
+
+Beyond the original MERN prototype, this version adds:
+
+- **Correct request workflow** — approving a request now claims a slot atomically (two simultaneous approvals can never overfill a project), rejecting/reverting frees it, and a student can be approved on only one project.
+- **Server-side eligibility checks** — CG cutoff, open slots, valid prerequisites and duplicate requests are enforced by the API, not just the UI.
+- **Request lifecycle** — `pending → approved / rejected`, plus student withdrawal and re-application.
+- **Authentication and authorization** — every route requires a session; users can only touch their own data, teachers only their own projects, and admin/teacher/student routes are role-gated.
+- **Security hardening** — `helmet`, rate limiting, NoSQL-injection sanitising, input validation, Mongo-backed sessions, secure cross-site cookies in production.
+- **In-app notifications** for new and updated requests.
+- **Demo mode and seed data** — one-click demo accounts and a seed script with sample projects and requests.
+- **Tests and CI** — API integration tests (`npm test` in `server/`) run in GitHub Actions together with a client build.
+- **Redesigned UI** — shared theme, responsive layout, loading/empty/error states, redesigned login, profile and requests pages.
+
 ## Installation and Setup
 
-1. Clone the repository
-2. Navigate to the project directory
-3. Install the necessary dependencies
-4. Set up the environment variables (for Google Login Auth and Mongo DataBase)
-5. Start the application: `npm start`
-   
+Requirements: Node.js 20+, a MongoDB database (Atlas free tier works), a Google OAuth client and a Firebase project (for file storage).
+
+```bash
+git clone https://github.com/msris93197-dev/Project-Bridge.git
+cd Project-Bridge
+
+# backend
+cd server
+cp .env.example .env      # fill in the values
+npm install
+npm run seed              # optional: sample data for the demo accounts
+npm start                 # http://localhost:8000 (set PORT to change)
+
+# frontend (second terminal)
+cd client
+cp .env.example .env      # fill in the Firebase values and API URL
+npm install
+npm start                 # http://localhost:3000
+```
+
+### Server environment (`server/.env`)
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE` | MongoDB connection string |
+| `CLIENT_ID`, `CLIENT_SECRET` | Google OAuth web client |
+| `SESSION_SECRET` | Long random string used to sign session cookies |
+| `PORT`, `CLIENT_URL`, `SERVER_URL` | Ports and public URLs (used for CORS, redirects, OAuth callback) |
+| `ADMIN_EMAILS` | Comma-separated emails that get the admin role |
+| `DEMO_MODE` | `true` enables demo accounts and lets any Google user pick a role |
+
+In Google Cloud Console, add `SERVER_URL/auth/google/callback` as an authorized redirect URI and `CLIENT_URL` as an authorized JavaScript origin.
+
+### Client environment (`client/.env`)
+
+`REACT_APP_API_URL`, `REACT_APP_DEMO_MODE` and the `REACT_APP_FIREBASE_*` values from your Firebase web app config.
+
+### Deployment
+
+- **Database:** MongoDB Atlas.
+- **Backend:** any Node host (e.g. Render). Set `NODE_ENV=production`, the variables above, and use `npm start`.
+- **Frontend:** a static host (e.g. Vercel). Build with `npm run build`, set `REACT_APP_API_URL` to the backend URL and rewrite all routes to `index.html`.
+
+> `DEMO_MODE=true` intentionally lets any signed-in user choose any role. Keep it off for a real BITS deployment.
+
 ## Usage
 
-**Professor:** Log in, create and manage projects, view and manage student requests, and update profile details.
-**Student:** Log in, view current requests, explore available projects, apply for projects, and update profile details.
+**Professor:** Log in, create and manage projects, review and decide on student requests, update profile details.
+**Student:** Log in, browse and filter the project bank, apply (or withdraw), track request status, update profile and documents.
 **Admin:** View project and request statistics.
 
+## Tests
 
-## Contributing
+```bash
+cd server
+DATABASE=mongodb://localhost:27017 npm test
+```
 
-Contributions are welcome! If you'd like to contribute to this project, please follow these steps:
+The tests use their own `pb_test` database and drop it afterwards.
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Make your changes.
-4. Commit your changes (`git commit -am 'Add some feature'`).
-5. Push to the branch (`git push origin feature/your-feature`).
-6. Create a new Pull Request.
+## Credits
+
+Originally built as a team project with [@Hrishi2705](https://github.com/Hrishi2705). This repository continues that work.

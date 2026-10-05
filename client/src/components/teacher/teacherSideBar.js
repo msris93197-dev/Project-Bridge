@@ -21,7 +21,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HomeIcon from '@mui/icons-material/Home';
 import Tooltip from '@mui/material/Tooltip';
 // import './teacherSideBar.css';
-import { useNavigate} from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
 
@@ -96,6 +96,7 @@ export default function TeacherSideBar({ children, userId }) {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const redirectHome = () => {
     navigate(`/teachers/TeacherHome/${userId}`);
@@ -173,15 +174,16 @@ export default function TeacherSideBar({ children, userId }) {
         <Divider />
         <List>
             {[
-              { text: 'Home', icon: <HomeIcon />, onClick: redirectHome},
-              { text: 'Project Requests', icon: <ChecklistRtlIcon />, onClick: redirectProjectBank },
-              { text: 'Profile', icon: <AccountBoxIcon />, onclick: redirectProfile},
-              { text: 'Logout', icon: <LogoutIcon />, onclick: logout }
+              { text: 'Home', icon: <HomeIcon />, onClick: redirectHome, match: 'Home' },
+              { text: 'Project Requests', icon: <ChecklistRtlIcon />, onClick: redirectProjectBank, match: 'RequestsPage' },
+              { text: 'Profile', icon: <AccountBoxIcon />, onClick: redirectProfile, match: 'Profile' },
+              { text: 'Logout', icon: <LogoutIcon />, onClick: logout }
             ].map((item, index) => (
               <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
                 <Tooltip title={item.text} arrow placement='right'>
                 <ListItemButton
                   onClick={item.onClick}
+                  selected={Boolean(item.match) && pathname.includes(item.match)}
                   sx={{
                     minHeight: 48,
                     justifyContent: open ? 'initial' : 'center',

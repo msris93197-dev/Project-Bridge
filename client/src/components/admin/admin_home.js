@@ -12,7 +12,6 @@ function AdminHome() {
     <>
     <div id='graphs_dashboard'>
     <div style={{ width: '100%' }}>
-        <h5></h5>
         <Graph6  />
       </div>
     <div id="graph_bg">

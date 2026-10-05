@@ -1,4 +1,3 @@
-const { Double } = require("mongodb");
 const mongoose = require("mongoose");
 
 const projectSchema = new mongoose.Schema({
@@ -7,9 +6,9 @@ const projectSchema = new mongoose.Schema({
   project_type: String,
   project_description: String,
   project_domain: String,
-  cg_cutoff: String,
-  project_slots: String,
-  filled_slots: String,
+  cg_cutoff: { type: Number, default: 0, min: 0, max: 10 },
+  project_slots: { type: Number, default: 1, min: 0 },
+  filled_slots: { type: Number, default: 0, min: 0 },
   pre_requisites: Array,
   finalized_students: Array
 });

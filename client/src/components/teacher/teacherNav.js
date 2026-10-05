@@ -14,6 +14,7 @@ import Tooltip from '@mui/material/Tooltip';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Avatar from '@mui/material/Avatar';
 import Logout from '@mui/icons-material/Logout';
+import NotificationBell from '../NotificationBell';
 import './teacherNav.css'
 
 const TeacherNav = ({ userId }) => {
@@ -73,6 +74,8 @@ const TeacherNav = ({ userId }) => {
               <Dropdown.Item onClick={logout}>Logout</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown> */}
+        <div style={{display:"flex", alignItems:"center"}}>
+        <NotificationBell userId={userId} />
         <Tooltip title="Account settings">
           <IconButton
             onClick={handleClick}
@@ -87,6 +90,7 @@ const TeacherNav = ({ userId }) => {
 
           </IconButton>
         </Tooltip>
+        </div>
         </Container>
         <Menu
         anchorEl={anchorEl}

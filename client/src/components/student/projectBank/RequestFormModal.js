@@ -53,7 +53,7 @@ const RequestFormModal = ({
   });
 
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [draftDetails, setDraftDetails] = useState(null);
+  const [, setDraftDetails] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
@@ -227,7 +227,7 @@ const RequestFormModal = ({
       // Handle error
       setSnackbarSeverity("error");
       setSnackbarTitle("Failure");
-      setSnackbarMessage("Error sending request");
+      setSnackbarMessage(error.response?.data?.message || "Error sending request");
       console.error("Error sending request:", error);
       setAlertStyle({
         backgroundColor: "#ffdddd",

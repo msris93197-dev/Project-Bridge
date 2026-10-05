@@ -1,12 +1,66 @@
-#files{
-    background-color: rgba(31, 38, 46, 0.1);
-    /* opacity: 1; */
-    -webkit-backdrop-filter: blur(37px);
-    backdrop-filter: blur(37px);
-    color: white;
-    /* border: white; */
-    border-radius: 18px;
-    padding: 5%;
-    border-color: rgba(59, 74, 89, 0.2);
-    position: relative;
+/* Layout shared with the teacher profile (.profile-*) lives in teacher_profile.css. */
+.profile-page {
+  max-width: 820px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--pb-border);
+}
+
+.profile-hero strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 1.1rem;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 18px;
+}
+
+.profile-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.file-field {
+  padding: 14px 0;
+  border-top: 1px solid var(--pb-border);
+}
+
+.file-field:first-of-type {
+  border-top: none;
+}
+
+.file-label {
+  display: block;
+  color: var(--pb-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .profile-grid { grid-template-columns: 1fr; }
 }

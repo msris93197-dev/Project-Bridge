@@ -1,10 +1,19 @@
 const projectdb = require("../model/projectSchema");
 
+const validateProject = ({ projectName, projectSlots, cgpaCutoff }) => {
+  if (!projectName || !String(projectName).trim()) return "Project name is required";
+  const slots = Number(projectSlots);
+  if (!Number.isInteger(slots) || slots < 1) return "Slots must be a whole number of at least 1";
+  const cg = Number(cgpaCutoff || 0);
+  if (Number.isNaN(cg) || cg < 0 || cg > 10) return "CG cutoff must be between 0 and 10";
+  return null;
+};
+
 exports.saveProject = async (req, res) => {
     // Logic for saving project
     try {
+        const teacherId = req.user.googleId;
         const {
-          teacherId,
           projectName,
           projectDescription,
           projectType,
@@ -14,6 +23,9 @@ exports.saveProject = async (req, res) => {
           prerequisites,
         } = req.body;
     
+        const invalid = validateProject(req.body);
+        if (invalid) return res.status(400).json({ error: invalid });
+
         // Create a new project instance
         const newProject = new projectdb({
           teacherId,
@@ -43,6 +55,15 @@ exports.updateProject = async (req, res) => {
         const projectId = req.params.projectId;
         const updatedProjectData = req.body;
     
+        const invalid = validateProject(updatedProjectData);
+        if (invalid) return res.status(400).json({ error: invalid });
+
+        const existing = await projectdb.findById(projectId);
+        if (!existing) return res.status(404).json({ error: "Project not found" });
+        if (Number(updatedProjectData.projectSlots) < existing.filled_slots) {
+          return res.status(409).json({ error: "Slots cannot be fewer than already approved students" });
+        }
+
         // Construct the updated project object with correct field names
         const updatedProject = {
           project_name: updatedProjectData.projectName,

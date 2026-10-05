@@ -42,7 +42,7 @@ const ProjectBank = () => {
   const [likedProjects, setLikedProjects] = useState([]);
   const [isRequestFormOpen, setIsRequestFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null); // Define selectedProject state
-  const [draftDetails, setDraftDetails] = useState(null);
+  const [draftDetails] = useState(null);
   const [sentRequests, setSentRequests] = useState([]);
   const [projectStatuses, setProjectStatuses] = useState({});
   const [searchQuery, setSearchQuery] = useState("");

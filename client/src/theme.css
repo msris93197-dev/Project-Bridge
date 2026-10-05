@@ -1,0 +1,135 @@
+/* Shared design tokens + building blocks. Keeps the existing dark / blue look. */
+:root {
+  --pb-bg: rgb(16, 20, 24);
+  --pb-surface: rgba(31, 38, 46, 0.55);
+  --pb-surface-solid: #171d24;
+  --pb-border: rgba(204, 229, 255, 0.09);
+  --pb-border-strong: rgba(204, 229, 255, 0.18);
+  --pb-text: #ebf5ff;
+  --pb-muted: rgb(153, 167, 187);
+  --pb-accent: rgb(153, 204, 255);
+  --pb-accent-strong: #0762eb;
+  --pb-success: #66bb6a;
+  --pb-warning: #ffb74d;
+  --pb-danger: #f44336;
+  --pb-radius: 16px;
+}
+
+.pb-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 12px 48px;
+  color: var(--pb-text);
+}
+
+.pb-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--pb-border);
+}
+
+.pb-page-header h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pb-page-header p {
+  margin: 4px 0 0;
+  color: var(--pb-muted);
+  font-size: 0.9rem;
+}
+
+.pb-card {
+  background: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: var(--pb-radius);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.pb-card:hover {
+  border-color: var(--pb-border-strong);
+}
+
+.pb-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.pb-card-title h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pb-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: var(--pb-muted);
+  font-size: 0.85rem;
+}
+
+.pb-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--pb-muted);
+  border: 1px dashed var(--pb-border-strong);
+  border-radius: var(--pb-radius);
+}
+
+.pb-empty h3 {
+  color: var(--pb-text);
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.pb-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--pb-accent);
+  background: rgba(7, 98, 235, 0.18);
+  border: 1px solid rgba(7, 98, 235, 0.4);
+  flex-shrink: 0;
+}
+
+.pb-error {
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.35);
+  color: #ffb4ab;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .pb-card { padding: 16px; }
+}
+
+/* Readable labels on disabled MUI fields */
+.MuiInputLabel-root.Mui-disabled,
+.MuiInputBase-input.Mui-disabled {
+  color: var(--pb-muted) !important;
+  -webkit-text-fill-color: var(--pb-text) !important;
+}
+.MuiInputLabel-root.Mui-disabled {
+  -webkit-text-fill-color: var(--pb-muted) !important;
+}

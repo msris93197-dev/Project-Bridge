@@ -1,96 +1,85 @@
 require("dotenv").config();
 const express = require("express");
-const app = express();
 const cors = require("cors");
-require("./db/conn");
-const PORT = process.env.PORT || 8000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
-const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
-const isProd = process.env.NODE_ENV === "production";
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("express-mongo-sanitize");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
+
+require("./db/conn");
 const userdb = require("./model/userSchema");
 const studentdb = require("./model/studentSchema");
 const teacherdb = require("./model/teacherSchema");
 const likesdb = require("./model/likesSchema");
-const clientid = process.env.CLIENT_ID;
-const clientsecret = process.env.CLIENT_SECRET;
 
-app.use(
-  cors({
-    origin: CLIENT_URL,
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-  })
-);
-app.use(express.json());
+const PORT = process.env.PORT || 8000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+const isProd = process.env.NODE_ENV === "production";
+const demoMode = () => process.env.DEMO_MODE === "true";
+const ROLES = ["student", "teacher", "admin"];
 
+const app = express();
 if (isProd) app.set("trust proxy", 1);
+
+app.use(helmet());
+app.use(cors({ origin: CLIENT_URL, methods: "GET,POST,PUT,DELETE", credentials: true }));
+app.use(express.json({ limit: "100kb" }));
+app.use(mongoSanitize());
+app.use(
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: 600, standardHeaders: true, legacyHeaders: false })
+);
+
+const sessionStore = process.env.DATABASE
+  ? MongoStore.create({ mongoUrl: process.env.DATABASE, dbName: process.env.DB_NAME || undefined })
+  : undefined;
+app.locals.sessionStore = sessionStore;
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev-only-secret",
     resave: false,
-    saveUninitialized: true,
-    cookie: { sameSite: isProd ? "none" : "lax", secure: isProd },
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: { sameSite: isProd ? "none" : "lax", secure: isProd, maxAge: 7 * 24 * 60 * 60 * 1000 },
   })
 );
-
-// Routes
-const projectRoutes = require("./routes/projectRoutes");
-const userRoutes = require("./routes/userRoutes");
-const teacherRoutes = require("./routes/teacherRoutes");
-const studentRoutes = require("./routes/studentRoutes");
-const requestRoutes = require("./routes/requestRoutes");
-const adminRoutes = require("./routes/adminRoutes")
-
-app.use("/projects", projectRoutes);
-app.use("/users", userRoutes);
-app.use("/teachers", teacherRoutes);
-app.use("/students", studentRoutes);
-app.use("/requests", requestRoutes);
-app.use("/admin", adminRoutes)
-
-// setuppassport
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Role rules for real Google sign-ins (BITS addresses). DEMO_MODE lets anyone pick a role.
+const roleForEmail = (email) => {
+  if (email.includes("@hyderabad.bits-pilani.ac.in")) {
+    return email.startsWith("f") ? "student" : "other";
+  }
+  const admins = (process.env.ADMIN_EMAILS || "shashank.sam03@gmail.com").split(",").map((e) => e.trim());
+  return admins.includes(email) ? "admin" : "teacher";
+};
 
 passport.use(
   new OAuth2Strategy(
     {
-      clientID: clientid,
-      clientSecret: clientsecret,
+      clientID: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
       callbackURL: `${SERVER_URL}/auth/google/callback`,
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await userdb.findOne({
-          googleId: profile.id,
-        });
-
+        const email = profile.emails[0].value;
+        let user = await userdb.findOne({ googleId: profile.id });
         if (!user) {
-          let user_type = profile.emails[0].value.includes(
-            "@hyderabad.bits-pilani.ac.in"
-          )
-            ? profile.emails[0].value.startsWith("f")
-              ? "student"
-              : "other"
-            : profile.emails[0].value === "shashank.sam03@gmail.com"
-              ? "admin"
-              : "teacher";
-
-          // profile.emails[0].value.startsWith('f') ? 'student' : 'teacher' : 'other'; (Actual code while deploying)
-          user = new userdb({
+          user = await userdb.create({
             googleId: profile.id,
             displayName: profile.displayName,
-            email: profile.emails[0].value,
+            email,
             image: profile.photos[0].value,
-            user_type: user_type,
+            user_type: roleForEmail(email),
           });
-          await user.save();
         }
-
         return done(null, user);
       } catch (error) {
         return done(error, null);
@@ -98,142 +87,114 @@ passport.use(
     }
   )
 );
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
 
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
+// Make sure the role-specific profile documents exist for this user
+const ensureProfile = async (userId, name, role) => {
+  if (role === "teacher") {
+    await teacherdb.updateOne(
+      { teacherId: userId },
+      { $setOnInsert: { teacherId: userId, name, block: "", roomNumber: "", department: "" } },
+      { upsert: true }
+    );
+  } else if (role === "student") {
+    await studentdb.updateOne(
+      { studentId: userId },
+      { $setOnInsert: { studentId: userId, name, idNumber: "", degree: "", firstDegree: "", secondDegree: "", cg: "", drafts: [] } },
+      { upsert: true }
+    );
+    await likesdb.updateOne({ studentId: userId }, { $setOnInsert: { studentId: userId, likedProjects: [] } }, { upsert: true });
+  }
+};
 
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
+const homeFor = (role, userId) =>
+  `${CLIENT_URL}/${
+    role === "admin" ? "admin/AdminHome" : role === "teacher" ? "teachers/TeacherHome" : "students/StudentHome"
+  }/${userId}`;
 
-app.get("/auth/google", (req, res, next) => {
-  const userType = req.query.user_type;
-  const authURL = `/auth/google/callback`;
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-    state: userType, 
-  })(req, res, next);
+app.get("/health", (req, res) => res.json({ status: "ok" }));
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60 });
+
+app.get("/auth/google", authLimiter, (req, res, next) => {
+  passport.authenticate("google", { scope: ["profile", "email"], state: req.query.user_type })(req, res, next);
 });
 
 app.get(
   "/auth/google/callback",
-  async (req, res, next) => {
-    passport.authenticate("google", {
-      failureRedirect: `${CLIENT_URL}/login`,
-    })(req, res, next);
+  authLimiter,
+  (req, res, next) => {
+    passport.authenticate("google", { failureRedirect: `${CLIENT_URL}/` })(req, res, next);
   },
   async (req, res) => {
-    const userType = req.query.state; 
-    const userEmail = req.user.email;
-    let expectedRole = "";
+    try {
+      const chosen = req.query.state;
+      const expectedRole = roleForEmail(req.user.email);
+      const role = demoMode() && ROLES.includes(chosen) ? chosen : expectedRole;
 
-     if (userEmail.includes("@hyderabad.bits-pilani.ac.in")) {
-      if (userEmail.startsWith("f")) {
-        expectedRole = "student";
-      } else {
-        expectedRole = "other";
-      }
-    } else if (userEmail === "shashank.sam03@gmail.com") {
-      expectedRole = "admin";
-    } else {
-      expectedRole = "teacher";
+      if (role !== chosen) return res.redirect(`${CLIENT_URL}/error`);
+
+      req.session.role = role;
+      await ensureProfile(req.user.googleId, req.user.displayName, role);
+      res.redirect(homeFor(role, req.user.googleId));
+    } catch (error) {
+      console.error("Login callback failed:", error);
+      res.redirect(`${CLIENT_URL}/error`);
     }
-
-    if (process.env.DEMO_MODE === "true" && ["student", "teacher", "admin"].includes(userType)) {
-      expectedRole = userType; // demo: any signed-in Google user may pick a role
-    }
-
-    if (expectedRole !== userType) {
-      res.redirect(`${CLIENT_URL}/error`); // Redirect to error page if roles mismatch
-      return;
-    }
-
-    if (expectedRole === "admin") {
-      const userId = req.user.googleId; // Extract userId from Google account
-      res.redirect(`${CLIENT_URL}/admin/adminHome/${userId}`);
-      return;
-    }
-
-    const userId = req.user.googleId; // Extract userId from Google account
-    const name = req.user.displayName;
-    // Check if the user already exists in the respective collection
-
-
-    let userExists = false;
-    if (userType === "teacher") {
-      userExists = await teacherdb.exists({ teacherId: userId });
-    } else if (userType === "student") {
-      userExists = await studentdb.exists({ studentId: userId });
-    }
-
-    if (!userExists) {
-      // Save userId in teachers or students collection based on user_type
-      if (userType === "teacher") {
-        const teacher = new teacherdb({
-          teacherId: userId,
-          name: name,
-          block: "",
-          roomNumber: "", 
-          department: "", 
-        });
-        await teacher.save();
-      } else if (userType === "student") {
-        const student = new studentdb({
-          studentId: userId,
-          name: name,
-          idNumber: "", 
-          degree: "",
-          firstDegree: "",
-          secondDegree: "",
-          cg:"",
-          resume:"",
-          performanceSheet:"",
-          drafts: [],
-        });
-        await student.save();
-        
-        const likes = new likesdb({
-          studentId: userId,
-          likedProjects: [], 
-        });
-        await likes.save();
-      }
-    }
-
-    res.redirect(
-      `${CLIENT_URL}/${
-        userType === "teacher" ? "teachers/TeacherHome" : "students/StudentHome"
-      }/${userId}`
-    );
   }
 );
 
-app.get("/login/success", async (req, res) => {
-
-  if (req.user) {
-    res.status(200).json({
-      message: "user Login",
-      user: req.user,
+// One-click demo accounts so reviewers can try every role without a Google account
+app.get("/auth/demo/:role", authLimiter, async (req, res, next) => {
+  const { role } = req.params;
+  if (!demoMode() || !ROLES.includes(role)) return res.status(404).json({ message: "Not found" });
+  try {
+    const googleId = `demo-${role}`;
+    const name = `Demo ${role[0].toUpperCase()}${role.slice(1)}`;
+    const user = await userdb.findOneAndUpdate(
+      { googleId },
+      { $setOnInsert: { googleId, displayName: name, email: `${googleId}@projectbridge.demo`, image: "", user_type: role } },
+      { new: true, upsert: true }
+    );
+    await ensureProfile(googleId, name, role);
+    req.login(user, (err) => {
+      if (err) return next(err);
+      req.session.role = role;
+      req.session.save(() => res.redirect(homeFor(role, googleId)));
     });
-  } else {
-    console.log("User not authenticated");
-    res.status(400).json({
-      message: "Not Authorized",
-    });
+  } catch (error) {
+    next(error);
   }
 });
 
+app.get("/login/success", (req, res) => {
+  if (!req.user) return res.status(401).json({ message: "Not Authorized" });
+  res.json({ message: "user Login", user: req.user, role: req.session.role });
+});
+
 app.get("/logout", (req, res, next) => {
-  req.logout(function (err) {
-    if (err) {
-      return next(err);
-    }
-    res.redirect(`${CLIENT_URL}/`);
+  req.logout((err) => {
+    if (err) return next(err);
+    req.session.destroy(() => res.redirect(`${CLIENT_URL}/`));
   });
 });
 
+app.use("/projects", require("./routes/projectRoutes"));
+app.use("/users", require("./routes/userRoutes"));
+app.use("/teachers", require("./routes/teacherRoutes"));
+app.use("/students", require("./routes/studentRoutes"));
+app.use("/requests", require("./routes/requestRoutes"));
+app.use("/admin", require("./routes/adminRoutes"));
+app.use("/notifications", require("./routes/notificationRoutes"));
 
-app.listen(PORT, () => {
-  console.log(`server start at port no ${PORT}`);
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Internal server error" });
 });
+
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`server start at port no ${PORT}`));
+}

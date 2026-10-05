@@ -1,11 +1,79 @@
-.css-1ex1afd-MuiTableCell-root {
-border-bottom: none !important;
-}
-.css-177gid-MuiTableCell-root {
-    border-bottom: none !important;
+.req-slots {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 14px;
 }
 
-.css-niqf4j-MuiStack-root {
-    justify-content: center;
-    align-items: center;
+.req-slots .MuiLinearProgress-root {
+  flex: 1;
+  height: 6px;
+  border-radius: 6px;
+}
+
+.req-none {
+  padding: 8px 0;
+  margin: 0;
+}
+
+.req-row {
+  border-top: 1px solid var(--pb-border);
+  padding: 12px 0;
+}
+
+.req-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.req-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.req-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.req-chevron svg {
+  transition: transform 0.2s ease;
+}
+
+.req-chevron.open svg {
+  transform: rotate(180deg);
+}
+
+.req-details {
+  margin: 12px 0 4px 54px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(7, 98, 235, 0.06);
+  border: 1px solid var(--pb-border);
+  font-size: 0.9rem;
+}
+
+.req-details p {
+  margin: 0 0 10px;
+}
+
+.req-label {
+  display: block;
+  color: var(--pb-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 640px) {
+  .req-actions { margin-left: 0; width: 100%; justify-content: space-between; }
+  .req-details { margin-left: 0; }
 }

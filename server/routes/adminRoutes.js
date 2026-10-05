@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const { requireRole } = require("../middleware/auth");
+
+router.use(requireRole("admin"));
 const adminController = require("../controllers/adminController");
 
 router.get("/projects-per-department", adminController.getProjectsPerDepartment);

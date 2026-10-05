@@ -8,13 +8,12 @@ exports.getData = async (req, res) => {
     // Logic for fetching Student data
     try {
         const studentId = req.params.userId;
-        const student = await studentdb.findOne({ studentId });
-    
-        if (!student) {
-          res.status(404).json({ error: "Student not found" });
-          return;
-        }
-    
+        const student = await studentdb.findOneAndUpdate(
+          { studentId },
+          { $setOnInsert: { studentId, name: req.user.displayName || "", idNumber: "", degree: "", firstDegree: "", secondDegree: "", cg: "", drafts: [] } },
+          { new: true, upsert: true }
+        );
+
         res.status(200).json(student);
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
@@ -48,29 +47,29 @@ exports.updateData = async (req, res) => {
   try {
       const studentId = req.params.userId;
       const { name, idNumber, degree, firstDegree, secondDegree, cg, resumeUrl, performanceSheetUrl, resumeName, performanceSheetName } = req.body;
+
+      if (cg !== undefined && cg !== "" && (Number.isNaN(Number(cg)) || Number(cg) < 0 || Number(cg) > 10)) {
+        return res.status(400).json({ error: "CG must be a number between 0 and 10" });
+      }
       // console.log("resumeName:", resumeName);
       // console.log("resumeUrl:", resumeUrl);
       // console.log("performanceSheetName:", performanceSheetName);
       // console.log("performanceSheetUrl:", performanceSheetUrl);
 
+      // Only touch the uploaded documents when a new file was provided
+      const update = { name, idNumber, degree, firstDegree, secondDegree, cg };
+      if (resumeUrl) {
+          update["resume.resumeUrl"] = resumeUrl;
+          update["resume.resumeName"] = resumeName;
+      }
+      if (performanceSheetUrl) {
+          update["performanceSheet.performanceSheetUrl"] = performanceSheetUrl;
+          update["performanceSheet.performanceSheetName"] = performanceSheetName;
+      }
+
       const updatedStudent = await studentdb.findOneAndUpdate(
           { studentId },
-          {
-              name,
-              idNumber,
-              degree,
-              firstDegree,
-              secondDegree,
-              cg,
-              resume: {
-                  resumeUrl,
-                  resumeName
-              },
-              performanceSheet: {
-                  performanceSheetUrl,
-                  performanceSheetName
-              }
-          },
+          { $set: update },
           { new: true }
       );
 
@@ -325,7 +324,7 @@ exports.getProjectStatus = async (req, res) => {
 
     // If no draft is found, search for the sent request in requestdb
     const request = await requestdb.findOne({ projectId });
-    if (request && request.requests.some((req) => req.studentId === studentId)) {
+    if (request && request.requests.some((req) => req.studentId === studentId && req.status !== "withdrawn")) {
       // If a request is found, set project status to "Request Sent"
       return res.status(200).json({ projectStatus: "Request Sent" });
     }

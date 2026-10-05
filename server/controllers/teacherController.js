@@ -2,18 +2,19 @@ const requestsdb = require("../model/requestSchema");
 const studentdb = require("../model/studentSchema");
 const teacherdb = require("../model/teacherSchema");
 const projectdb = require("../model/projectSchema");
+const { notify } = require("./notificationController");
 
 exports.getData = async (req, res) => {
     // Logic for fetching Teacher data
     try {
         const teacherId = req.params.userId;
-        const teacher = await teacherdb.findOne({ teacherId });
-    
-        if (!teacher) {
-          res.status(404).json({ error: "Teacher not found" });
-          return;
-        }
-    
+        // Create the profile on first visit so the page never dead-ends
+        const teacher = await teacherdb.findOneAndUpdate(
+          { teacherId },
+          { $setOnInsert: { teacherId, name: req.user.displayName || "", block: "", roomNumber: "", department: "" } },
+          { new: true, upsert: true }
+        );
+
         res.status(200).json(teacher);
       } catch (error) {
         res.status(500).json({ error: "Internal server error" });
@@ -25,6 +26,13 @@ exports.updateData = async (req, res) => {
     try {
         const teacherId = req.params.userId;
         const { name, block, roomNumber, department } = req.body;
+
+        if (!name || !String(name).trim()) {
+          return res.status(400).json({ error: "Name is required" });
+        }
+        if (roomNumber && !/^\d{1,3}$/.test(String(roomNumber))) {
+          return res.status(400).json({ error: "Room number must be 1-3 digits" });
+        }
     
         const updatedTeacher = await teacherdb.findOneAndUpdate(
           { teacherId },
@@ -50,9 +58,8 @@ exports.projectRequests = async (req, res) => {
     // Step 1: Retrieve projects for the given teacherId
     const projects = await projectdb.find({ teacherId });
 
-    // Check if no projects found
     if (!projects || projects.length === 0) {
-        return res.status(404).json({ message: 'No projects found for the given teacher' });
+        return res.json([]);
     }
 
     // Initialize data array to store results
@@ -77,11 +84,12 @@ exports.projectRequests = async (req, res) => {
 
         // Retrieve student info for each request along with additional fields from requestsdb
         const requestsData = [];
-        for (const request of projectRequests.requests) {
+        for (const request of projectRequests.requests.filter((r) => r.status !== "withdrawn")) {
             const studentId = request.studentId;
 
             // Retrieve student info for the current request
             const studentInfo = await studentdb.findOne({ studentId });
+            if (!studentInfo) continue; // student record no longer exists
 
             // Get additional fields from requestsdb
             const requestData = {
@@ -110,61 +118,70 @@ exports.projectRequests = async (req, res) => {
 };
 
 exports.updateRequestStatus = async (req, res) => {
+  const { projectId, studentId } = req.params;
+  const { status } = req.body;
+
+  if (!["pending", "approved", "rejected"].includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
+
   try {
-    const { projectId, studentId } = req.params;
-    const { status } = req.body;
-
-    // Find the document matching projectId
-    const projectRequest = await requestsdb.findOne({ projectId });
-
-    if (!projectRequest) {
-      return res.status(404).json({ message: 'Project request not found' });
-    }
-
-    // Find the request in the requests array with matching studentId
-    const request = projectRequest.requests.find(req => req.studentId === studentId);
-
+    const requestDoc = await requestsdb.findOne({ projectId });
+    const request = requestDoc && requestDoc.requests.find((r) => r.studentId === studentId);
     if (!request) {
-      return res.status(404).json({ message: 'Student request not found for this project' });
+      return res.status(404).json({ message: "Student request not found for this project" });
     }
 
-    // Update the status of the request
-    request.status = status;
-    await projectRequest.save();
-
-    console.log('Request status updated successfully');
-
-    // Check if the status is "accepted"
-    if (status === "accepted") {
-      // Find the project in the projectdb using the projectId
-      const project = await projectdb.findOne({ _id: projectId });
-
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-
-      // Check if slots are filled
-      if (parseInt(project.filled_slots) >= parseInt(project.project_slots)) {
-        console.log('Slots filled already');
-        return res.status(400).json({ message: 'Slots filled already' });
-      }
-
-      // Increase filled slots and update finalized_students array
-      project.filled_slots = (parseInt(project.filled_slots) + 1).toString();
-      project.finalized_students.push(studentId);
-
-      await project.save();
-
-      console.log('Project slots updated successfully');
+    const previous = request.status;
+    if (previous === "withdrawn") {
+      return res.status(409).json({ message: "Request was withdrawn by the student" });
+    }
+    if (previous === status) {
+      return res.json({ message: "Request status unchanged" });
     }
 
-    res.json({ message: 'Request status updated successfully' });
+    if (status === "approved") {
+      const approvedElsewhere = await requestsdb.exists({
+        projectId: { $ne: projectId },
+        requests: { $elemMatch: { studentId, status: "approved" } },
+      });
+      if (approvedElsewhere) {
+        return res.status(409).json({ message: "Student is already approved for another project" });
+      }
+
+      // Claim a slot atomically so concurrent approvals can never overfill the project
+      const claimed = await projectdb.findOneAndUpdate(
+        { _id: projectId, $expr: { $lt: ["$filled_slots", "$project_slots"] } },
+        { $inc: { filled_slots: 1 }, $push: { finalized_students: studentId } }
+      );
+      if (!claimed) {
+        const exists = await projectdb.exists({ _id: projectId });
+        return exists
+          ? res.status(409).json({ message: "Slots filled already" })
+          : res.status(404).json({ message: "Project not found" });
+      }
+    } else if (previous === "approved") {
+      await projectdb.updateOne(
+        { _id: projectId },
+        { $inc: { filled_slots: -1 }, $pull: { finalized_students: studentId } }
+      );
+    }
+
+    await requestsdb.updateOne(
+      { projectId, "requests.studentId": studentId },
+      { $set: { "requests.$.status": status } }
+    );
+
+    const project = req.project || (await projectdb.findById(projectId));
+    const label = { approved: "approved", rejected: "rejected", pending: "moved back to pending" }[status];
+    await notify(studentId, `Your request for "${project ? project.project_name : "a project"}" was ${label}.`, `/students/StudentHome/${studentId}`);
+
+    res.json({ message: "Request status updated successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 // exports.updateRequestStatus = async (req, res) => {
 //   try {

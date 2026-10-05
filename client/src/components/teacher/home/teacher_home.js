@@ -31,7 +31,7 @@ function TeacherHome() {
     try {
       const response = await fetch(`${API_URL}/projects/fetchProjects/${userId}`);
       const data = await response.json();
-      setProjects(data);
+      setProjects(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching projects:", error);
     }

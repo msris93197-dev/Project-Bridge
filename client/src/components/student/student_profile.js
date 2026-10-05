@@ -1,477 +1,265 @@
-import { API_URL } from "../../config";
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import {
-  CFormInput,
-  // CFormTextarea,
-  CFormSelect,
-  // CInputGroup,
-  // CButton,
-  CContainer,
-  CRow,
-  CCol,
-  // CForm,
-  // CBadge,
-  // CCloseButton,
-  // CForm,
-} from "@coreui/react";
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
-import "./student_profile.css";
-import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import MenuItem from "@mui/material/MenuItem";
+import Skeleton from "@mui/material/Skeleton";
+import Snackbar from "@mui/material/Snackbar";
+import TextField from "@mui/material/TextField";
+import EditIcon from "@mui/icons-material/Edit";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-// import { faEllipsisV } from '@fortawesome/free-solid-svg-icons/faEllipsisV';
-// import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import app from "../firebase";
+import { API_URL } from "../../config";
+import "./student_profile.css";
+
+const FIRST_DEGREES = [
+  ["CE", "Civil Engineering (CE)"],
+  ["CSE", "Computer Science Engineering (CSE)"],
+  ["ECE", "Electronics and Communication Engineering (ECE)"],
+  ["EEE", "Electrical and Electronics Engineering (EEE)"],
+  ["ENI", "Electronics and Instrumentation Engineering (ENI)"],
+  ["ME", "Mechanical Engineering (ME)"],
+  ["PHA", "B.Pharma (PHA)"],
+];
+const SECOND_DEGREES = [
+  ["BIO", "Biology (BIO)"],
+  ["CHEM", "Chemistry (CHEM)"],
+  ["ECON", "Economics (ECON)"],
+  ["MATH", "Mathematics (MATH)"],
+  ["PHY", "Physics (PHY)"],
+];
+const EMPTY = { name: "", idNumber: "", degree: "Single Degree", firstDegree: "", secondDegree: "", cg: "" };
+
+const FileField = ({ label, name, url, disabled, progress, onPick }) => (
+  <div className="file-field">
+    <span className="file-label">{label}</span>
+    <div className="file-actions">
+      {url ? (
+        <Button size="small" variant="outlined" startIcon={<VisibilityIcon />} onClick={() => window.open(url, "_blank")}>
+          {name || "View file"}
+        </Button>
+      ) : (
+        <span className="pb-meta">Nothing uploaded yet</span>
+      )}
+      <Button component="label" size="small" variant="contained" color="secondary" startIcon={<UploadFileIcon />} disabled={disabled}>
+        {url ? "Replace" : "Upload"}
+        <input hidden type="file" accept="application/pdf" onChange={(e) => e.target.files[0] && onPick(e.target.files[0])} />
+      </Button>
+    </div>
+    {progress > 0 && progress < 100 && <LinearProgress variant="determinate" value={progress} sx={{ mt: 1, borderRadius: 2 }} />}
+  </div>
+);
 
 const StudentProfile = () => {
   const { userId } = useParams();
-  const [studentData, setStudentData] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    idNumber: "",
-    degree: "Single Degree",
-    firstDegree: "",
-    secondDegree: "",
-    cg: "",
-  });
-  const [editMode, setEditMode] = useState(false);
+  const [saved, setSaved] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [editing, setEditing] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [files, setFiles] = useState({ resume: {}, performanceSheet: {} });
+  const [progress, setProgress] = useState({ resume: 0, performanceSheet: 0 });
+  const [uploaded, setUploaded] = useState({});
 
-  const [resume, setResume] = useState(undefined);
-  const [performanceSheet, setPerformanceSheet] = useState(undefined);
-  const [resumePerc, setResumePerc] = useState(0);
-  const [performaceSheetPerc, setPerformanceSheetPerc] = useState(0);
-  const [resumeUrl, setResumeUrl] = useState(null);
-  const [performanceSheetUrl, setPerformanceSheetUrl] = useState(null);
-  const [resumeName, setResumeName] = useState(null);
-  const [performanceSheetName, setPerformanceSheetName] = useState(null);
-  const [inputs, setInputs] = useState({});
+  const load = useCallback(async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/students/getData/${userId}`);
+      const profile = { ...EMPTY, ...data, degree: data.degree || "Single Degree" };
+      setSaved(profile);
+      setForm(profile);
+      setFiles({ resume: data.resume || {}, performanceSheet: data.performanceSheet || {} });
+      setLoadError("");
+    } catch (err) {
+      console.error("Error fetching student data:", err);
+      setLoadError(err.response?.data?.error || err.response?.data?.message || "Could not load your profile.");
+    }
+  }, [userId]);
 
   useEffect(() => {
-    resume && uploadFile(resume, "resumeUrl");
-  }, [resume]);
+    load();
+  }, [load]);
 
-  useEffect(() => {
-    performanceSheet && uploadFile(performanceSheet, "performanceSheetUrl");
-  }, [performanceSheet]);
-
-  const uploadFile = (file, fileType) => {
-    const storage = getStorage(app);
-    const folder = fileType === "resumeUrl" ? "resume/" : "performanceSheet/";
-    const fileTypeSuffix =
-      fileType === "resumeUrl" ? "_resume" : "_performanceSheet";
-    const nameType =
-      fileType === "resumeUrl" ? "resumeName" : "performanceSheetName";
-    const fileName = userId + fileTypeSuffix + "_" + file.name;
-
-    const storageRef = ref(storage, folder + fileName);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
+  const upload = (file, kind) => {
+    const urlKey = kind === "resume" ? "resumeUrl" : "performanceSheetUrl";
+    const nameKey = kind === "resume" ? "resumeName" : "performanceSheetName";
+    const storageRef = ref(getStorage(app), `${kind}/${userId}_${kind}_${file.name}`);
+    const task = uploadBytesResumable(storageRef, file);
+    task.on(
       "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        fileType === "resumeUrl"
-          ? setResumePerc(Math.round(progress))
-          : setPerformanceSheetPerc(Math.round(progress));
-        switch (snapshot.state) {
-          case "paused":
-            console.log("Upload is paused");
-            break;
-          case "running":
-            console.log("Upload is running");
-            break;
-          default:
-            break;
-        }
-      },
+      (snap) => setProgress((p) => ({ ...p, [kind]: Math.round((snap.bytesTransferred / snap.totalBytes) * 100) })),
       (error) => {
-        console.log(error);
-        switch (error.code) {
-          case "storage/unauthorized":
-            // User doesn't have permission to access the object
-            console.log(error);
-            break;
-          case "storage/canceled":
-            // User canceled the upload
-            break;
-          case "storage/unknown":
-            // Unknown error occurred, inspect error.serverResponse
-            break;
-          default:
-            break;
-        }
+        console.error(error);
+        setProgress((p) => ({ ...p, [kind]: 0 }));
+        setToast({ severity: "error", message: "Upload failed. Check that Firebase Storage is enabled." });
       },
-      () => {
-        // Upload completed successfully, now we can get the download URL
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          console.log("DownloadURL - ", downloadURL);
-          setInputs((prev) => {
-            return {
-              ...prev,
-              [fileType]: downloadURL,
-              [nameType]: file.name,
-            };
-          });
-        });
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref);
+        setUploaded((u) => ({ ...u, [urlKey]: url, [nameKey]: file.name }));
+        setFiles((f) => ({ ...f, [kind]: { [urlKey]: url, [nameKey]: file.name } }));
       }
     );
   };
 
-  useEffect(() => {
-    fetchStudentData(userId);
-  }, [userId]);
-
-  // const fetchStudentData = async (userId) => {
-  //   try {
-  //     const response = await axios.get(`http://localhost:8000/students/getData/${userId}`);
-  //     setStudentData(response.data);
-  //     // Populate form data with fetched student data
-  //     setFormData(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching student data:", error);
-  //   }
-  // };
-
-  const fetchStudentData = async (userId) => {
-    try {
-      const response = await axios.get(
-        `${API_URL}/students/getData/${userId}`
-      );
-      setStudentData(response.data);
-      // Populate form data with fetched student data
-      setFormData(response.data);
-      // Set uploaded file URLs and names if available
-      if (response.data.resume) {
-        setResumeUrl(response.data.resume.resumeUrl);
-        setResumeName(response.data.resume.resumeName);
-      }
-      if (response.data.performanceSheet) {
-        setPerformanceSheetUrl(
-          response.data.performanceSheet.performanceSheetUrl
-        );
-        setPerformanceSheetName(
-          response.data.performanceSheet.performanceSheetName
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching student data:", error);
-    }
-  };
-
-  const handleInputChange = (e) => {
+  const change = (e) => {
     const { name, value } = e.target;
-    if (name === "degree" && value === "Single Degree") {
-      setFormData({
-        ...formData,
-        [name]: value,
-        secondDegree: "", // Reset the value of the "Second Degree" field
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
+    setForm((f) => ({ ...f, [name]: value, ...(name === "degree" && value === "Single Degree" ? { secondDegree: "" } : {}) }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    console.log("Form submitted");
-    console.log("formData:", formData);
-    console.log("inputs:", inputs);
+  const cgInvalid = form.cg !== "" && (Number.isNaN(Number(form.cg)) || Number(form.cg) < 0 || Number(form.cg) > 10);
+  const canSave = form.name.trim() !== "" && !cgInvalid && !saving;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
     try {
-      await axios.put(`${API_URL}/students/updateData/${userId}`, {
-        ...formData,
-        ...inputs,
-      });
-      // After successful submission, fetch updated data again
-      fetchStudentData(userId);
-      // Disable edit mode after saving
-      setEditMode(false);
-    } catch (error) {
-      console.error("Error saving student data:", error);
+      await axios.put(`${API_URL}/students/updateData/${userId}`, { ...form, ...uploaded });
+      setUploaded({});
+      setEditing(false);
+      await load();
+      setToast({ severity: "success", message: "Profile saved." });
+    } catch (err) {
+      setToast({ severity: "error", message: err.response?.data?.error || "Could not save your profile." });
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Function to toggle edit mode
-  const toggleEditMode = () => {
-    setEditMode(!editMode);
+  const cancel = () => {
+    setForm(saved);
+    setUploaded({});
+    setEditing(false);
+    load();
   };
 
-  // const handleFilesUpload = async (e) => {
-  //   e.preventDefault();
-  //   try{
-  //     await axios.post(`http://localhost:8000/students/uploadFiles/${userId}`, { ...inputs });
-  //   } catch (error){
-  //     console.log(error);
-  //   }
-  // }
-
-  if (!studentData) {
-    return <div>Loading...</div>;
-  }
+  const initials = (saved?.name || "?").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
 
   return (
-    <CContainer>
-      <CRow>
-        <div
-          id="profile_form"
-          style={{
-            width: "100%",
-            left: "0",
-            marginBottom: "0",
-            paddingBottom: "0",
-          }}
-        >
-          <form onSubmit={handleSubmit}>
-            <CRow>
-              <CCol>
-                <div id="title_profile">
-                  <h2
-                    style={{ color: "white", marginBottom: "0" }}
-                    id="child_title"
-                  >
-                    My Profile
-                  </h2>
-                  {editMode ? (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        type="submit"
-                        id="child_title"
-                      >
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      type="button"
-                      onClick={toggleEditMode}
-                      id="child_title"
-                    >
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </CCol>
-            </CRow>
-            <hr></hr>
-            <br />
-            <br />
-            <CRow>
-              <CCol>
-                <div id="student_details">
-                  <CFormInput
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    id="floatingInput"
-                    floatingClassName="mb-3"
-                    floatingLabel="Name"
-                    placeholder="name@example.com"
-                    feedbackInvalid="Please enter valid Name"
-                    required
-                  />
-
-                  <CFormInput
-                    type="text"
-                    name="idNumber"
-                    value={formData.idNumber}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    id="floatingInput"
-                    floatingClassName="mb-3"
-                    floatingLabel="ID Number"
-                    placeholder="name@example.com"
-                    feedbackInvalid="Please enter valid ID number"
-                    required
-                  />
-
-                  <CFormSelect
-                    id="floatingInput"
-                    floatingLabel="Degree"
-                    name="degree"
-                    value={formData.degree}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    options={[
-                      { label: "Single Degree", value: "Single Degree" },
-                      { label: "Dual Degree", value: "Dual Degree" },
-                    ]}
-                  />
-                  <br />
-
-                  <CFormSelect
-                    id="floatingInput"
-                    floatingLabel="B.E Degree"
-                    name="firstDegree"
-                    value={formData.firstDegree}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    options={[
-                      "Select",
-                      { label: "Civil Engineering(CE)", value: "CE" },
-                      {
-                        label: "Computer Science Engineering (CSE)",
-                        value: "CSE",
-                      },
-                      {
-                        label: "Electronics and Communication Engineering(ECE)",
-                        value: "ECE",
-                      },
-                      {
-                        label: "Electrical and Electronics Engineering (EEE)",
-                        value: "EEE",
-                      },
-                      {
-                        label:
-                          "Electronics and Instrumention Engineering (ENI)",
-                        value: "ENI",
-                      },
-                      { label: "Mechanical Engineering (ME)", value: "ME" },
-                      { label: "B.Pharma (PHA)", value: "PHA" },
-                    ]}
-                  />
-                  <br></br>
-                  <CFormSelect
-                    id="floatingInput"
-                    floatingLabel="MSc. Degree"
-                    name="secondDegree"
-                    value={formData.secondDegree}
-                    onChange={handleInputChange}
-                    disabled={!editMode || formData.degree !== "Dual Degree"}
-                    options={[
-                      "Select",
-                      { label: "Biology (BIO)", value: "BIO" },
-                      { label: "Chemistry (CHEM)", value: "CHEM" },
-                      { label: "Economics (ECON)", value: "ECON" },
-                      { label: "Mathematics (MATH)", value: "MATH" },
-                      { label: "Physics (PHY)", value: "PHY" },
-                    ]}
-                  />
-                  <br></br>
-                  <CFormInput
-                    type="number"
-                    id="floatingInput"
-                    floatingLabel="CGPA"
-                    name="cg"
-                    min="0"
-                    step="0.01"
-                    max="10"
-                    value={formData.cg}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                  />
-                  <br />
-                  <br />
-                </div>
-              </CCol>
-              <CCol>
-                <div
-                  id="files"
-                  // style={{width:'80%', position:'relative', left:'10%', top:'20%'}}
-                >
-                  <div id="title_profile">
-                    <h2 style={{ color: "white" }} id="child_title" disabled>
-                      Upload files
-                    </h2>
-                  </div>
-                  <hr></hr>
-                  <CRow>
-                    <div>
-                      <CFormInput
-                        type="file"
-                        id="resume"
-                        accept="application/pdf"
-                        label="Resume (pdf)"
-                        disabled={!editMode}
-                        // onChange={(e) => setResume((prev) => e.target.files[0])}
-                        onChange={(e) => setResume(e.target.files[0])}
-                      />
-                      {resumeUrl && (
-                        <div>
-                          <Button
-                            variant="outlined"
-                            startIcon={
-                              <VisibilityIcon
-                                color="success"
-                                marginLeft="21px"
-                              />
-                            }
-                            onClick={() => window.open(resumeUrl, "_blank")}
-                          >
-                            {resumeName}
-                          </Button>
-                        </div>
-                      )}
-                      {editMode && (
-                          resumePerc > 0 && "Uploading: " + resumePerc + "%"
-                      )}
-                      
-                    </div>
-
-                    {/* <CButton color="danger">Delete Resume</CButton> */}
-                  </CRow>
-                  <br></br>
-                  <CRow>
-                    <div>
-                      <CFormInput
-                        type="file"
-                        id="performaceSheet"
-                        accept="application/pdf"
-                        label="Performance Sheet (pdf)"
-                        disabled={!editMode}
-                        // onChange={(e) => setPerformanceSheet((prev) => e.target.files[0])}
-                        onChange={(e) => setPerformanceSheet(e.target.files[0])}
-                      />
-
-                      {performanceSheetUrl && (
-                        <div>
-                          <Button
-                            variant="outlined"
-                            startIcon={
-                              <VisibilityIcon
-                                color="success"
-                                marginLeft="21px"
-                              />
-                            }
-                            onClick={() =>
-                              window.open(performanceSheetUrl, "_blank")
-                            }
-                          >
-                            {performanceSheetName}
-                          </Button>
-                        </div>
-                      )}
-                      {editMode && (
-                            performaceSheetPerc > 0 && "Uploading: " + performaceSheetPerc + "%"
-                      )}
-                      
-                    </div>
-                    {/* <CButton color="danger">Delete Performance Sheet</CButton> */}
-                  </CRow>
-                </div>
-              </CCol>
-            </CRow>
-          </form>
+    <div className="pb-page profile-page">
+      <div className="pb-page-header">
+        <div>
+          <h1>My Profile</h1>
+          <p>Professors use this to decide on your requests. Keep it up to date.</p>
         </div>
-      </CRow>
-    </CContainer>
+        {saved && !editing && (
+          <Button variant="contained" color="secondary" startIcon={<EditIcon />} onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+        )}
+      </div>
+
+      {loadError && (
+        <div className="pb-error">
+          {loadError}{" "}
+          <Button size="small" color="inherit" onClick={load}>
+            Retry
+          </Button>
+        </div>
+      )}
+      {!saved && !loadError && <Skeleton variant="rounded" height={420} />}
+
+      {saved && (
+        <form onSubmit={submit}>
+          <div className="pb-card">
+            <div className="profile-hero">
+              <span className="pb-avatar profile-avatar">{initials}</span>
+              <div>
+                <strong>{saved.name || "Add your name"}</strong>
+                <span className="pb-meta">
+                  <span>{saved.idNumber || "ID not set"}</span>
+                  <span>CGPA {saved.cg || "—"}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="profile-grid">
+              <TextField label="Name" name="name" value={form.name} onChange={change} disabled={!editing} required fullWidth />
+              <TextField label="ID number" name="idNumber" value={form.idNumber} onChange={change} disabled={!editing} fullWidth />
+              <TextField
+                label="CGPA"
+                name="cg"
+                type="number"
+                value={form.cg}
+                onChange={change}
+                disabled={!editing}
+                fullWidth
+                inputProps={{ min: 0, max: 10, step: 0.01 }}
+                error={cgInvalid}
+                helperText={cgInvalid ? "Enter a value between 0 and 10" : " "}
+              />
+              <TextField select label="Degree" name="degree" value={form.degree} onChange={change} disabled={!editing} fullWidth>
+                <MenuItem value="Single Degree">Single Degree</MenuItem>
+                <MenuItem value="Dual Degree">Dual Degree</MenuItem>
+              </TextField>
+              <TextField select label="B.E. degree" name="firstDegree" value={form.firstDegree} onChange={change} disabled={!editing} fullWidth>
+                <MenuItem value="">Select</MenuItem>
+                {FIRST_DEGREES.map(([v, l]) => (
+                  <MenuItem key={v} value={v}>{l}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="M.Sc. degree"
+                name="secondDegree"
+                value={form.secondDegree}
+                onChange={change}
+                disabled={!editing || form.degree !== "Dual Degree"}
+                fullWidth
+              >
+                <MenuItem value="">Select</MenuItem>
+                {SECOND_DEGREES.map(([v, l]) => (
+                  <MenuItem key={v} value={v}>{l}</MenuItem>
+                ))}
+              </TextField>
+            </div>
+          </div>
+
+          <div className="pb-card">
+            <div className="pb-card-title">
+              <h2>Documents</h2>
+              <span className="pb-meta">PDF only</span>
+            </div>
+            <FileField
+              label="Resume"
+              url={files.resume.resumeUrl}
+              name={files.resume.resumeName}
+              disabled={!editing}
+              progress={progress.resume}
+              onPick={(f) => upload(f, "resume")}
+            />
+            <FileField
+              label="Performance sheet"
+              url={files.performanceSheet.performanceSheetUrl}
+              name={files.performanceSheet.performanceSheetName}
+              disabled={!editing}
+              progress={progress.performanceSheet}
+              onPick={(f) => upload(f, "performanceSheet")}
+            />
+          </div>
+
+          {editing && (
+            <div className="profile-buttons">
+              <Button variant="text" color="inherit" onClick={cancel} disabled={saving}>Cancel</Button>
+              <Button type="submit" variant="contained" color="success" disabled={!canSave}>
+                {saving ? "Saving…" : "Save changes"}
+              </Button>
+            </div>
+          )}
+        </form>
+      )}
+
+      <Snackbar open={Boolean(toast)} autoHideDuration={3500} onClose={() => setToast(null)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+        {toast ? (
+          <Alert severity={toast.severity} variant="filled" onClose={() => setToast(null)}>
+            {toast.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
+    </div>
   );
 };
 
