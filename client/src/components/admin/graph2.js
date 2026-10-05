@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useEffect, useState } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import axios from 'axios';
@@ -11,7 +12,7 @@ export default function Graph2() {
 
   const fetchAvgRequestsPerDepartment = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/admin/avg-requests-per-department');
+      const response = await axios.get(`${API_URL}/admin/avg-requests-per-department`);
       setAvgRequestsData(response.data);
     } catch (error) {
       console.error('Error fetching average requests per department:', error);

@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 // import Dropdown from 'react-bootstrap/Dropdown';
@@ -40,7 +41,7 @@ const AdminNav = ({ userId }) => {
 
   const getUser = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/users/getUserData/${userId}`); // Fetch user data using userId
+      const response = await axios.get(`${API_URL}/users/getUserData/${userId}`); // Fetch user data using userId
       setUserdata(response.data);
     } catch (error) {
       console.log("error", error);
@@ -48,7 +49,7 @@ const AdminNav = ({ userId }) => {
   }
 
   const logout = () => {
-    window.open("http://localhost:8000/logout", "_self");
+    window.open(`${API_URL}/logout`, "_self");
   }
 
   // const toggleDropdown = () => {

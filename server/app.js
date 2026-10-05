@@ -3,7 +3,10 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 require("./db/conn");
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+const isProd = process.env.NODE_ENV === "production";
 const session = require("express-session");
 const passport = require("passport");
 const OAuth2Strategy = require("passport-google-oauth20").Strategy;
@@ -16,12 +19,22 @@ const clientsecret = process.env.CLIENT_SECRET;
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: CLIENT_URL,
     methods: "GET,POST,PUT,DELETE",
     credentials: true,
   })
 );
 app.use(express.json());
+
+if (isProd) app.set("trust proxy", 1);
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "dev-only-secret",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { sameSite: isProd ? "none" : "lax", secure: isProd },
+  })
+);
 
 // Routes
 const projectRoutes = require("./routes/projectRoutes");
@@ -37,13 +50,6 @@ app.use("/teachers", teacherRoutes);
 app.use("/students", studentRoutes);
 app.use("/requests", requestRoutes);
 app.use("/admin", adminRoutes)
-app.use(
-  session({
-    secret: "8642957315",
-    resave: false,
-    saveUninitialized: true,
-  })
-);
 
 // setuppassport
 app.use(passport.initialize());
@@ -54,7 +60,7 @@ passport.use(
     {
       clientID: clientid,
       clientSecret: clientsecret,
-      callbackURL: "/auth/google/callback", 
+      callbackURL: `${SERVER_URL}/auth/google/callback`,
       scope: ["profile", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -114,7 +120,7 @@ app.get(
   "/auth/google/callback",
   async (req, res, next) => {
     passport.authenticate("google", {
-      failureRedirect: "http://localhost:3000/login",
+      failureRedirect: `${CLIENT_URL}/login`,
     })(req, res, next);
   },
   async (req, res) => {
@@ -134,14 +140,18 @@ app.get(
       expectedRole = "teacher";
     }
 
+    if (process.env.DEMO_MODE === "true" && ["student", "teacher", "admin"].includes(userType)) {
+      expectedRole = userType; // demo: any signed-in Google user may pick a role
+    }
+
     if (expectedRole !== userType) {
-      res.redirect("http://localhost:3000/error"); // Redirect to error page if roles mismatch
+      res.redirect(`${CLIENT_URL}/error`); // Redirect to error page if roles mismatch
       return;
     }
 
     if (expectedRole === "admin") {
       const userId = req.user.googleId; // Extract userId from Google account
-      res.redirect(`http://localhost:3000/admin/adminHome/${userId}`);
+      res.redirect(`${CLIENT_URL}/admin/adminHome/${userId}`);
       return;
     }
 
@@ -192,7 +202,7 @@ app.get(
     }
 
     res.redirect(
-      `http://localhost:3000/${
+      `${CLIENT_URL}/${
         userType === "teacher" ? "teachers/TeacherHome" : "students/StudentHome"
       }/${userId}`
     );
@@ -219,7 +229,7 @@ app.get("/logout", (req, res, next) => {
     if (err) {
       return next(err);
     }
-    res.redirect("http://localhost:3000/");
+    res.redirect(`${CLIENT_URL}/`);
   });
 });
 

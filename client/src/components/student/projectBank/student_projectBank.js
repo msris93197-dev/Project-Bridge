@@ -1,3 +1,4 @@
+import { API_URL } from "../../../config";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
@@ -55,7 +56,7 @@ const ProjectBank = () => {
     const fetchProjectBankData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/students/projectBank/${userId}`
+          `${API_URL}/students/projectBank/${userId}`
         );
         console.log("Project Bank Data:", response.data);
         setProjects(response.data);
@@ -67,7 +68,7 @@ const ProjectBank = () => {
     const fetchLikedProjects = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/students/getLiked/${userId}`
+          `${API_URL}/students/getLiked/${userId}`
         );
         console.log("Liked Projects Data:", response.data);
         setLikedProjects(response.data);
@@ -86,7 +87,7 @@ const ProjectBank = () => {
       try {
         const requests = projects.map((project) =>
           axios.get(
-            `http://localhost:8000/students/getProjectStatus/${userId}/${project.projectId}`
+            `${API_URL}/students/getProjectStatus/${userId}/${project.projectId}`
           )
         );
         const responses = await Promise.all(requests);
@@ -113,7 +114,7 @@ const ProjectBank = () => {
           const requests = {};
           for (const project of projects) {
             const response = await axios.get(
-              `http://localhost:8000/requests/sentRequests/${project.projectId}/${userId}`
+              `${API_URL}/requests/sentRequests/${project.projectId}/${userId}`
             );
             requests[project.projectId] = response.data ? true : false;
           }
@@ -131,12 +132,12 @@ const ProjectBank = () => {
     try {
       if (isChecked) {
         await axios.post(
-          `http://localhost:8000/students/saveLiked/${userId}/${projectId}`
+          `${API_URL}/students/saveLiked/${userId}/${projectId}`
         );
         setLikedProjects([...likedProjects, { projectId }]);
       } else {
         await axios.delete(
-          `http://localhost:8000/students/removeLiked/${userId}/${projectId}`
+          `${API_URL}/students/removeLiked/${userId}/${projectId}`
         );
         setLikedProjects(
           likedProjects.filter((project) => project.projectId !== projectId)

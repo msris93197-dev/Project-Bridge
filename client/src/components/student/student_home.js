@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -19,7 +20,7 @@ const StudentHome = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/students/getSentRequests/${userId}`);
+        const response = await axios.get(`${API_URL}/students/getSentRequests/${userId}`);
         setProjects(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);

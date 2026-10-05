@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useEffect, useState } from 'react';
 import { BarChart } from '@mui/x-charts/BarChart';
 import axios from 'axios';
@@ -11,7 +12,7 @@ export default function Graph4() {
 
   const fetchProjectTypeCountsByDepartment = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/admin/project-type-counts-by-department');
+      const response = await axios.get(`${API_URL}/admin/project-type-counts-by-department`);
       setProjectTypeCountsByDepartment(response.data);
     } catch (error) {
       console.error('Error fetching project type counts by department:', error);

@@ -1,10 +1,11 @@
+import { API_URL } from "../config";
 // Frontend Login.js
 import React from 'react';
 import "./Login.css";
 
 const Login = () => {
   const handleGoogleLogin = (userType) => {
-    window.location.href = `http://localhost:8000/auth/google?user_type=${userType}`; // Pass userType as query parameter
+    window.location.href = `${API_URL}/auth/google?user_type=${userType}`; // Pass userType as query parameter
   }
 
   return (

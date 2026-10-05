@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -110,7 +111,7 @@ export default function TeacherSideBar({ children, userId }) {
   };
   
   const logout = () => {
-    window.open("http://localhost:8000/logout", "_self");
+    window.open(`${API_URL}/logout`, "_self");
     console.log("go to logout");
   };
 

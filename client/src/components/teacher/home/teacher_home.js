@@ -1,3 +1,4 @@
+import { API_URL } from "../../../config";
 // TeacherHome.js
 import React, { useState, useEffect } from "react";
 import ProjectForm from "./project_form";
@@ -28,7 +29,7 @@ function TeacherHome() {
   }, []);
   const fetchProjects = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/projects/fetchProjects/${userId}`);
+      const response = await fetch(`${API_URL}/projects/fetchProjects/${userId}`);
       const data = await response.json();
       setProjects(data);
     } catch (error) {
@@ -38,7 +39,7 @@ function TeacherHome() {
 
   const saveProject = async (projectData) => {
     try {
-      const response = await fetch(`http://localhost:8000/projects/saveProject/${userId}`, {
+      const response = await fetch(`${API_URL}/projects/saveProject/${userId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,7 +57,7 @@ function TeacherHome() {
   const deleteProject = async (projectId) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/projects/deleteProject/${projectId}`,
+        `${API_URL}/projects/deleteProject/${projectId}`,
         {
           method: "DELETE",
         }

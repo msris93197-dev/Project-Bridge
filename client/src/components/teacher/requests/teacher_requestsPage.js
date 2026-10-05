@@ -1,3 +1,4 @@
+import { API_URL } from "../../../config";
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -39,7 +40,7 @@ const ProjectRequests = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/teachers/projectRequests/${userId}`);
+        const response = await fetch(`${API_URL}/teachers/projectRequests/${userId}`);
         const data = await response.json();
         setProjects(data);
       } catch (error) {
@@ -52,7 +53,7 @@ const ProjectRequests = () => {
 
   const updateRequestStatus = async (projectId, studentId, status) => {
     try {
-      await axios.put(`http://localhost:8000/teachers/status/${projectId}/${studentId}`, { status });
+      await axios.put(`${API_URL}/teachers/status/${projectId}/${studentId}`, { status });
       // Show success message
       setSnackbarSeverity("success");
       setSnackbarTitle("Success");
@@ -84,7 +85,7 @@ const ProjectRequests = () => {
       });
       setSnackbarOpen(true);
       // Refresh the project requests after updating status
-      const response = await fetch(`http://localhost:8000/teachers/projectRequests/${userId}`);
+      const response = await fetch(`${API_URL}/teachers/projectRequests/${userId}`);
       const data = await response.json();
       setProjects(data);
     } catch (error) {

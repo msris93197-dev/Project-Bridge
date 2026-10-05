@@ -1,3 +1,4 @@
+import { API_URL } from "../../../config";
 import React, { useState, useEffect } from "react";
 import {
   CModal,
@@ -72,7 +73,7 @@ const RequestFormModal = ({
     try {
       // Fetch draft details from the backend
       const response = await axios.get(
-        `http://localhost:8000/students/getDraft/${userId}/${project.projectId}`
+        `${API_URL}/students/getDraft/${userId}/${project.projectId}`
       );
       const draft = response.data;
       // Update form data with draft details if draft exists
@@ -189,7 +190,7 @@ const RequestFormModal = ({
   
       // Send the request to store the request data
       await axios.post(
-        `http://localhost:8000/requests/storeRequest/${selectedProject.projectId}/${userId}`,
+        `${API_URL}/requests/storeRequest/${selectedProject.projectId}/${userId}`,
         requestData
       );
   
@@ -215,7 +216,7 @@ const RequestFormModal = ({
       setSnackbarOpen(true);
   
       // Call the API to delete the draft
-      await axios.delete(`http://localhost:8000/students/deleteDraft/${userId}/${selectedProject.projectId}`);
+      await axios.delete(`${API_URL}/students/deleteDraft/${userId}/${selectedProject.projectId}`);
   
       // Close modal after 5 seconds
       setTimeout(() => {
@@ -245,7 +246,7 @@ const RequestFormModal = ({
 
   const handleSaveDraft = async () => {
     try {
-      await axios.post(`http://localhost:8000/students/saveDraft/${userId}/${selectedProject.projectId}`, {
+      await axios.post(`${API_URL}/students/saveDraft/${userId}/${selectedProject.projectId}`, {
         // studentId: userId,
         // projectId: selectedProject.projectId,
         projectName: selectedProject.project_name,

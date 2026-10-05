@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
@@ -144,7 +145,7 @@ const StudentProfile = () => {
   const fetchStudentData = async (userId) => {
     try {
       const response = await axios.get(
-        `http://localhost:8000/students/getData/${userId}`
+        `${API_URL}/students/getData/${userId}`
       );
       setStudentData(response.data);
       // Populate form data with fetched student data
@@ -189,7 +190,7 @@ const StudentProfile = () => {
     console.log("formData:", formData);
     console.log("inputs:", inputs);
     try {
-      await axios.put(`http://localhost:8000/students/updateData/${userId}`, {
+      await axios.put(`${API_URL}/students/updateData/${userId}`, {
         ...formData,
         ...inputs,
       });

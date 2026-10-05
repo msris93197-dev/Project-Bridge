@@ -1,3 +1,4 @@
+import { API_URL } from "../../../config";
 import React, { useState, useEffect } from "react";
 import {
   CButton,
@@ -42,7 +43,7 @@ function EditModal({ projectId, closeModal }) {
     const fetchProjectData = async () => {
       try {
         const response = await fetch(
-          `http://localhost:8000/projects/projectData/${projectId}`
+          `${API_URL}/projects/projectData/${projectId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch project data");
@@ -80,7 +81,7 @@ function EditModal({ projectId, closeModal }) {
     setValidated(false);
     try {
       const response = await fetch(
-        `http://localhost:8000/projects/updateProject/${projectId}`,
+        `${API_URL}/projects/updateProject/${projectId}`,
         {
           method: "PUT",
           headers: {

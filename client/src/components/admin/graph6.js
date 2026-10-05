@@ -1,3 +1,4 @@
+import { API_URL } from "../../config";
 import React, { useState, useEffect } from 'react';
 import { Gauge } from '@mui/x-charts/Gauge';
 export default function Graph6() {
@@ -11,7 +12,7 @@ export default function Graph6() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('http://localhost:8000/admin/getusercount');
+        const response = await fetch(`${API_URL}/admin/getusercount`);
         const data = await response.json();
         console.log(data);
         setCounts(data);
