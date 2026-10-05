@@ -109,7 +109,6 @@ function EditModal({ projectId, closeModal }) {
       // Update the frontend state with the updated project data
       setProjectData(updatedProjectData);
       closeModal();
-      window.location.reload();
     } catch (error) {
       console.error("Error saving project:", error);
     }
@@ -132,6 +131,8 @@ function EditModal({ projectId, closeModal }) {
 
   return (
     <CModal
+      size="lg"
+      alignment="center"
       backdrop="static"
       visible={true}
       onClose={closeModal}
@@ -142,7 +143,7 @@ function EditModal({ projectId, closeModal }) {
       </CModalHeader>
       <CModalBody>
         <CForm
-          className="row g-3 needs-validation"
+          className="needs-validation"
           noValidate
           validated={validated}
           onSubmit={handleSaveProject}
@@ -302,7 +303,7 @@ function EditModal({ projectId, closeModal }) {
           </CContainer>
           <CModalFooter>
             <CButton color="secondary" onClick={closeModal}>
-              Close
+              Cancel
             </CButton>
             <CButton color="primary" type="submit">
               Save changes

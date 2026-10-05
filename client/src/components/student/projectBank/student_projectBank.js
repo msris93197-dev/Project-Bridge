@@ -1,425 +1,367 @@
-import { API_URL } from "../../../config";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Typography,
-  Paper,
-  IconButton,
   Box,
-  Collapse,
   Button,
   Checkbox,
-  TextField,
+  Chip,
+  Collapse,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  Skeleton,
   Switch,
-  TableFooter
-  
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
 } from "@mui/material";
-import {
-  // CFormInput,
-  CFormSelect,
-} from "@coreui/react";
-import FavoriteBorder from '@mui/icons-material/FavoriteBorder';
-import Favorite from '@mui/icons-material/Favorite';
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import FavoriteBorder from "@mui/icons-material/FavoriteBorder";
+import Favorite from "@mui/icons-material/Favorite";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import SearchIcon from "@mui/icons-material/Search";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import RequestFormModal from "./RequestFormModal";
-import Chip from "@mui/material/Chip";
-import Stack from "@mui/material/Stack";
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import { API_URL } from "../../../config";
 import "./student_projectBank.css";
+
+const PROJECT_TYPES = [
+  ["DOP", "Design Project (DOP)"],
+  ["LOP", "Lab Project (LOP)"],
+  ["SOP", "Study Project (SOP)"],
+];
+const DEPARTMENTS = [
+  ["BIO", "Biological Sciences (BIO)"],
+  ["CHE", "Chemical Engineering (CHE)"],
+  ["CHEM", "Chemistry (CHEM)"],
+  ["CE", "Civil Engineering (CE)"],
+  ["CS", "Computer Science (CS)"],
+  ["ECON", "Economics and Finance (ECON)"],
+  ["EEE", "Electrical & Electronics Engineering (EEE)"],
+  ["HSS", "Humanities and Social Sciences (HSS)"],
+  ["MATH", "Mathematics (MATH)"],
+  ["ME", "Mechanical Engineering (ME)"],
+  ["PHA", "Pharmacy (PHA)"],
+  ["PHY", "Physics (PHY)"],
+];
+const ROWS_PER_PAGE = 6;
+
+const statusChip = (status) => {
+  if (!status || status === "No Draft/Request") return <span className="pb-meta">—</span>;
+  const color = status === "Request Sent" ? "success" : "warning";
+  return <Chip size="small" variant="outlined" color={color} label={status} />;
+};
+
+const BankRow = ({ project, status, liked, requestSent, onLike, onRequest }) => {
+  const [open, setOpen] = useState(false);
+  const eligible = project.cg_eligibility === "Eligible";
+  const slots = Number(project.project_slots) || 0;
+  const filled = Number(project.filled_slots) || 0;
+  const full = slots > 0 && filled >= slots;
+  const blockedReason = !eligible ? "You are below the CG cutoff" : full ? "All slots are filled" : "";
+
+  return (
+    <>
+      <TableRow>
+        <TableCell padding="checkbox">
+          <IconButton size="small" aria-label="Show details" onClick={() => setOpen(!open)} sx={{ ml: 1 }}>
+            <KeyboardArrowDownIcon sx={{ transition: "transform .2s", transform: open ? "rotate(180deg)" : "none" }} />
+          </IconButton>
+        </TableCell>
+        <TableCell sx={{ fontWeight: 600 }}>{project.project_name}</TableCell>
+        <TableCell>
+          <Chip size="small" label={project.project_type} />
+        </TableCell>
+        <TableCell>{project.teacher_name}</TableCell>
+        <TableCell>{project.department}</TableCell>
+        <TableCell>
+          <Chip size="small" variant="outlined" color={eligible ? "success" : "error"} label={eligible ? "Eligible" : "Not eligible"} />
+        </TableCell>
+        <TableCell align="center">
+          <span className={full ? "pb-meta" : ""}>
+            {Math.max(slots - filled, 0)}/{slots}
+          </span>
+        </TableCell>
+        <TableCell>{statusChip(status)}</TableCell>
+        <TableCell align="center">
+          <Checkbox
+            checked={liked}
+            onChange={(e) => onLike(project.project_name, e.target.checked)}
+            icon={<FavoriteBorder />}
+            checkedIcon={<Favorite />}
+            color="error"
+            size="small"
+          />
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell sx={{ py: 0, borderBottom: open ? undefined : "none !important" }} colSpan={9}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box className="bank-detail">
+              <div className="full">
+                <span className="label">Description</span>
+                {project.project_description || "No description provided."}
+              </div>
+              <div>
+                <span className="label">Domain</span>
+                {project.project_domain || "—"}
+              </div>
+              <div>
+                <span className="label">CG cutoff</span>
+                {project.cg_cutoff}
+              </div>
+              <div className="full">
+                <span className="label">Prerequisites</span>
+                {(project.pre_requisites || []).length
+                  ? project.pre_requisites.map((p) => <Chip key={p} size="small" label={p} sx={{ mr: 0.75 }} />)
+                  : "None"}
+              </div>
+              <div className="full">
+                {requestSent ? (
+                  <Chip label="Request already sent" color="success" variant="outlined" />
+                ) : (
+                  <Tooltip title={blockedReason}>
+                    <span>
+                      <Button variant="contained" disabled={Boolean(blockedReason)} onClick={() => onRequest(project)}>
+                        Request this project
+                      </Button>
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
+
 const ProjectBank = () => {
   const { userId } = useParams();
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(null);
   const [likedProjects, setLikedProjects] = useState([]);
-  const [isRequestFormOpen, setIsRequestFormOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null); // Define selectedProject state
-  const [draftDetails] = useState(null);
-  const [sentRequests, setSentRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState({});
   const [projectStatuses, setProjectStatuses] = useState({});
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [isRequestFormOpen, setIsRequestFormOpen] = useState(false);
+  const [error, setError] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [projectType, setProjectType] = useState("Select"); // State variable for project type
-  const [department, setDepartment] = useState("Select"); // State variable for department
-  const [eligibleOnly, setEligibleOnly] = useState(false); 
-  const [showLikedProjects, setShowLikedProjects] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const rowsPerPage = 5;
+  const [projectType, setProjectType] = useState("");
+  const [department, setDepartment] = useState("");
+  const [eligibleOnly, setEligibleOnly] = useState(false);
+  const [showLiked, setShowLiked] = useState(false);
+  const [page, setPage] = useState(0);
+
   useEffect(() => {
-    const fetchProjectBankData = async () => {
+    const load = async () => {
       try {
-        const response = await axios.get(
-          `${API_URL}/students/projectBank/${userId}`
-        );
-        console.log("Project Bank Data:", response.data);
-        setProjects(response.data);
-      } catch (error) {
-        console.error(error);
+        const [bank, liked] = await Promise.all([
+          axios.get(`${API_URL}/students/projectBank/${userId}`),
+          axios.get(`${API_URL}/students/getLiked/${userId}`).catch(() => ({ data: [] })),
+        ]);
+        setProjects(Array.isArray(bank.data) ? bank.data : []);
+        setLikedProjects(Array.isArray(liked.data) ? liked.data : []);
+      } catch (err) {
+        console.error(err);
+        setError(err.response?.data?.message || "Could not load the project bank.");
+        setProjects([]);
       }
     };
-
-    const fetchLikedProjects = async () => {
-      try {
-        const response = await axios.get(
-          `${API_URL}/students/getLiked/${userId}`
-        );
-        console.log("Liked Projects Data:", response.data);
-        setLikedProjects(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchProjectBankData();
-    fetchLikedProjects();
-    // fetchProjectStatuses();
+    load();
   }, [userId]);
 
   useEffect(() => {
-    const fetchProjectStatuses = async () => {
+    if (!projects || projects.length === 0) return;
+    const loadStatuses = async () => {
       try {
-        const requests = projects.map((project) =>
-          axios.get(
-            `${API_URL}/students/getProjectStatus/${userId}/${project.projectId}`
-          )
-        );
-        const responses = await Promise.all(requests);
-        const statuses = responses.reduce((acc, response, index) => {
-          const project = projects[index];
-          acc[project.projectId] = response.data.projectStatus;
-          return acc;
-        }, {});
+        const [statusResponses, sentResponses] = await Promise.all([
+          Promise.all(projects.map((p) => axios.get(`${API_URL}/students/getProjectStatus/${userId}/${p.projectId}`))),
+          Promise.all(projects.map((p) => axios.get(`${API_URL}/requests/sentRequests/${p.projectId}/${userId}`))),
+        ]);
+        const statuses = {};
+        const sent = {};
+        projects.forEach((p, i) => {
+          statuses[p.projectId] = statusResponses[i].data.projectStatus;
+          sent[p.projectId] = Boolean(sentResponses[i].data);
+        });
         setProjectStatuses(statuses);
-      } catch (error) {
-        console.error("Error fetching project statuses:", error);
+        setSentRequests(sent);
+      } catch (err) {
+        console.error("Error fetching project statuses:", err);
       }
     };
-
-    if (projects.length > 0) {
-      fetchProjectStatuses();
-    }
+    loadStatuses();
   }, [projects, userId]);
 
-  useEffect(() => {
-    if (projects.length > 0) {
-      const fetchSentRequests = async () => {
-        try {
-          const requests = {};
-          for (const project of projects) {
-            const response = await axios.get(
-              `${API_URL}/requests/sentRequests/${project.projectId}/${userId}`
-            );
-            requests[project.projectId] = response.data ? true : false;
-          }
-          setSentRequests(requests);
-        } catch (error) {
-          console.error("Error fetching sent requests:", error);
-        }
-      };
-
-      fetchSentRequests();
-    }
-  }, [projects, userId]);
-
-  const handleLike = async (projectId, isChecked) => {
+  const handleLike = async (projectName, isChecked) => {
     try {
       if (isChecked) {
-        await axios.post(
-          `${API_URL}/students/saveLiked/${userId}/${projectId}`
-        );
-        setLikedProjects([...likedProjects, { projectId }]);
+        await axios.post(`${API_URL}/students/saveLiked/${userId}/${encodeURIComponent(projectName)}`);
+        setLikedProjects((prev) => [...prev, { projectId: projectName }]);
       } else {
-        await axios.delete(
-          `${API_URL}/students/removeLiked/${userId}/${projectId}`
-        );
-        setLikedProjects(
-          likedProjects.filter((project) => project.projectId !== projectId)
-        );
+        await axios.delete(`${API_URL}/students/removeLiked/${userId}/${encodeURIComponent(projectName)}`);
+        setLikedProjects((prev) => prev.filter((p) => p.projectId !== projectName));
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     }
   };
-  const updateProjectStatus = (projectId, status) => {
-    setProjectStatuses((prevStatuses) => ({
-      ...prevStatuses,
-      [projectId]: status,
-    }));
-  };
 
-  const filteredProjects = projects.filter((project) => {
-    const searchKeywords = searchQuery.toLowerCase().split(" ");
-    const matchesSearchQuery = searchKeywords.every((keyword) =>
-      project.project_name.toLowerCase().includes(keyword) ||
-      project.teacher_name.toLowerCase().includes(keyword)
-    );
-    const matchesProjectType = projectType === "Select" || project.project_type === projectType;
-    const matchesDepartment = department === "Select" || project.department === department;
-    const matchesEligibility = !eligibleOnly || project.cg_eligibility === "Eligible";
-    const matchesLikedProjects = !showLikedProjects || likedProjects.some((liked) => liked.projectId === project.project_name);
-    return matchesSearchQuery && matchesProjectType && matchesDepartment && matchesEligibility && matchesLikedProjects;
-  });
+  const filtered = useMemo(() => {
+    const words = searchQuery.toLowerCase().split(" ").filter(Boolean);
+    return (projects || []).filter((p) => {
+      const haystack = `${p.project_name} ${p.teacher_name}`.toLowerCase();
+      return (
+        words.every((w) => haystack.includes(w)) &&
+        (!projectType || p.project_type === projectType) &&
+        (!department || p.department === department) &&
+        (!eligibleOnly || p.cg_eligibility === "Eligible") &&
+        (!showLiked || likedProjects.some((l) => l.projectId === p.project_name))
+      );
+    });
+  }, [projects, searchQuery, projectType, department, eligibleOnly, showLiked, likedProjects]);
 
-  const handleShowLikedProjectsChange = (event) => {
-    setShowLikedProjects(event.target.checked);
-  };
-  // Event handlers for updating project type and department
-  const handleProjectTypeChange = (event) => {
-    setProjectType(event.target.value);
-  };
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, projectType, department, eligibleOnly, showLiked]);
 
-  const handleDepartmentChange = (event) => {
-    setDepartment(event.target.value);
-  };
-  // Event handler for updating search query state
-  const handleSearchInputChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const handleEligibilityChange = (event) => {
-    setEligibleOnly(event.target.checked);
-  };
-
-  // Calculate start and end indices of the current page
-const startIndex = currentPage * rowsPerPage;
-const endIndex = startIndex + rowsPerPage;
-
-// Handle next page button click
-const handleNextPage = () => {
-  setCurrentPage((prevPage) => prevPage + 1);
-};
-
-// Handle previous page button click
-const handlePreviousPage = () => {
-  setCurrentPage((prevPage) => prevPage - 1);
-};
-
-// Get the current page's projects
-const currentPageProjects = filteredProjects.slice(startIndex, endIndex);
-
-  // Function to clear all filters
-  const handleClearFilters = () => {
+  const clearFilters = () => {
     setSearchQuery("");
-    setProjectType("Select");
-    setDepartment("Select");
+    setProjectType("");
+    setDepartment("");
     setEligibleOnly(false);
+    setShowLiked(false);
   };
 
-
-  const Row = ({ project, projectStatuses }) => {
-    const [open, setOpen] = useState(false);
-    if (!project || !project.project_name) {
-      return null; // Return null or some fallback JSX if project is null or undefined, or if project_name is not present
-    }
-    const isLiked = likedProjects.some(
-      (liked) => liked.projectId === project.project_name
-    );
-
-    const isRequestSent = sentRequests[project.projectId];
-
-    const projectStatus = projectStatuses[project.projectId];
-
-    // This line is causing the error
-
-    const handleRequest = (projectData) => {
-      setSelectedProject(projectData); // Set selectedProject when request button is clicked
-      setIsRequestFormOpen(true);
-    };
-
-
-    return (
-      <>
-        <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-          <TableCell>
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={() => setOpen(!open)}
-              id="collapse_btn"
-            >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </TableCell>
-          <TableCell component="th" scope="row">
-            {project.project_name}
-          </TableCell>
-          <TableCell>{project.project_type}</TableCell>
-          {/* <TableCell>{project.project_domain}</TableCell> */}
-          <TableCell>{project.teacher_name}</TableCell>
-          <TableCell>{project.department}</TableCell>
-          <TableCell>{project.pre_requisites.join(", ")}</TableCell>
-          {/* <TableCell>{project.cg_cutoff}</TableCell> */}
-          <TableCell>{project.cg_eligibility}</TableCell>
-          <TableCell>{projectStatus}</TableCell>
-          <TableCell>
-            <Checkbox
-              checked={isLiked}
-              onChange={(event) =>
-                handleLike(project.project_name, event.target.checked)
-              }
-              icon={<FavoriteBorder />} checkedIcon={<Favorite />} 
-            />
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ margin: 1 }}>
-                <Typography variant="h6" gutterBottom component="div">
-                  Project Details
-                </Typography>
-                <Typography>{`Project Description: ${project.project_description}`}</Typography>
-                <Typography>{`CG Cutoff: ${project.cg_cutoff}`}</Typography>
-                <Typography>{`Project Domain: ${project.project_domain}`}</Typography>
-                <Typography>{`CG Eligibility: ${project.cg_eligibility}`}</Typography>
-                {/* <Button onClick={() => handleRequest(project)} variant="contained" color="primary">Request</Button> */}
-                {/* Render other project details here */}
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  style={{ justifyContent: "flex-start" }}
-                >
-                  {isRequestSent ? (
-                    <Chip
-                      label="Request Already Sent"
-                      color="success"
-                      variant="outlined"
-                    />
-                  ) : (
-                    <Button
-                      onClick={() => handleRequest(project)}
-                      variant="contained"
-                      color="primary"
-                    >
-                      Request
-                    </Button>
-                  )}
-                </Stack>
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      </>
-    );
-  };
+  const hasFilters = searchQuery || projectType || department || eligibleOnly || showLiked;
+  const pageCount = Math.max(Math.ceil(filtered.length / ROWS_PER_PAGE), 1);
+  const pageRows = filtered.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
 
   return (
-    <div style={{width:"90%", marginLeft:"5%"}}>
-      <h1 style={{marginTop:"2%"}}>Project Bank</h1>
-      <hr></hr>
-      <Stack direction="row" spacing={2}>
-            <TextField
-              label="Enter Project Name or Teacher Name..."
-              variant="outlined"
-              value={searchQuery}
-              onChange={handleSearchInputChange}
-              style={{ marginBottom: 20, width:'350px'}}
-            />
-            <CFormSelect
-              id="floatingInput"
-              floatingLabel="Project Type"
-              placeholder="name@example.com"
-              value={projectType}
-              onChange={handleProjectTypeChange}
-              options={[
-                "Select",
-                { label: "Design Project (DOP)", value: "DOP" },
-                { label: "Lab Project (LOP)", value: "LOP" },
-                { label: "Study Project (SOP)", value: "SOP" },
-              ]}
-              
-            />
-            <CFormSelect
-              id="floatingInput"
-              floatingLabel="Department"
-              placeholder="name@example.com" 
-              name="department" onChange={handleDepartmentChange}
-              options={[
-                "Select",
-                { label: "Biological Sciences (BIO)", value: "BIO" },
-                { label: "Chemical Engineering (CHE)", value: "CHE" },
-                { label: "Chemistry (CHEM)", value: "CHEM" },
-                { label: "Civil Engineering (CE)", value: "CE" },
-                { label: "Computer Science (CS)", value: "CS" },
-                { label: "Economics and Finance (ECON)", value: "ECON" },
-                { label: "Electrical & Electronics Engineering (EEE)", value: "EEE" },
-                { label: "Humanities and Social Sciences (HSS)", value: "HSS" },
-                { label: "Mathematics (MATH)", value: "MATH" },
-                { label: "Mechanical Engineering (ME)", value: "ME" },
-                { label: "Pharmacy (PHA)", value: "PHA" },
-                { label: "Physics(PHY)", value: "PHY" },
-              ]}
-              />
-            <FormControlLabel
-              control={<Switch checked={eligibleOnly} onChange={handleEligibilityChange} />}
-              label="Show Eligible Only"
-              style={{alignItems:'baseline'}}
-            />
-            <FormControlLabel
-                control={<Switch checked={showLikedProjects} onChange={handleShowLikedProjectsChange} />}
-                label="Show Liked Projects"
-                style={{alignItems:'baseline'}}
-              />
-            <Button variant="outlined" onClick={handleClearFilters} id="clr_btn" >Clear Filters</Button>
-      </Stack>
-      
-      <TableContainer component={Paper} id="main_table" style={{width:"100%", marginLeft:"0%", left: "0px"}}>
-        <Table aria-label="collapsible table">
-          <TableHead style={{backgroundColor:"black", borderBottom:"0.2px solid white"}}>
-            <TableRow>
-              <TableCell width="2%" />
-              <TableCell width="20%">Project Name</TableCell>
-              <TableCell width="8%">Project Type</TableCell>
-              {/* <TableCell width="10%">Project Domain</TableCell> */}
-              <TableCell width="10%">Teacher Name</TableCell>
-              <TableCell width="7%">Department</TableCell>
-              <TableCell width="12%">Pre-requisites</TableCell>
-              {/* <TableCell width="10%">CG Cutoff</TableCell> */}
-              <TableCell width="8%">CG Eligibility</TableCell>
-              <TableCell width="10%">Project Status</TableCell>
-              <TableCell width="2%">Like</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {currentPageProjects.map((project, index) => (
-              <Row
-                key={index}
-                project={project}
-                projectStatuses={projectStatuses}
-                updateProjectStatus={updateProjectStatus}
-                handleRequest={() => setIsRequestFormOpen(true)}
-              />
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow style={{paddingBottom:'0'}}>
-              <TableCell colSpan={11} style={{ textAlign: "right" , borderBottom:'none', paddingBottom:'0' }}>
-                <Button onClick={handlePreviousPage} disabled={currentPage === 0} id='pagination_btn' startIcon={<ArrowBackIosIcon/>}>
-                  Previous
-                </Button>
-                <Button onClick={handleNextPage} disabled={endIndex >= filteredProjects.length} id='pagination_btn' endIcon={<ArrowForwardIosIcon/>}>
-                  Next
-                </Button>
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer>
-      {isRequestFormOpen && (
+    <div className="pb-page" style={{ maxWidth: 1200 }}>
+      <div className="pb-page-header">
+        <div>
+          <h1>Project Bank</h1>
+          <p>Find a project that fits your interests and eligibility.</p>
+        </div>
+        <span className="pb-meta">
+          {projects ? `${filtered.length} of ${projects.length} projects` : ""}
+        </span>
+      </div>
+
+      <div className="pb-toolbar">
+        <TextField
+          className="grow"
+          placeholder="Search by project or teacher name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <TextField select className="select" label="Project type" value={projectType} onChange={(e) => setProjectType(e.target.value)}>
+          <MenuItem value="">All types</MenuItem>
+          {PROJECT_TYPES.map(([v, l]) => (
+            <MenuItem key={v} value={v}>{l}</MenuItem>
+          ))}
+        </TextField>
+        <TextField select className="select" label="Department" value={department} onChange={(e) => setDepartment(e.target.value)}>
+          <MenuItem value="">All departments</MenuItem>
+          {DEPARTMENTS.map(([v, l]) => (
+            <MenuItem key={v} value={v}>{l}</MenuItem>
+          ))}
+        </TextField>
+        <FormControlLabel control={<Switch size="small" checked={eligibleOnly} onChange={(e) => setEligibleOnly(e.target.checked)} />} label="Eligible only" />
+        <FormControlLabel control={<Switch size="small" checked={showLiked} onChange={(e) => setShowLiked(e.target.checked)} />} label="Liked" />
+        <Button variant="outlined" size="small" startIcon={<FilterAltOffIcon />} onClick={clearFilters} disabled={!hasFilters}>
+          Clear
+        </Button>
+      </div>
+
+      {error && <div className="pb-error">{error}</div>}
+      {projects === null && <Skeleton variant="rounded" height={360} />}
+
+      {projects && (
+        <TableContainer className="pb-table-wrap">
+          <Table aria-label="Project bank">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox" />
+                <TableCell>Project</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Teacher</TableCell>
+                <TableCell>Dept.</TableCell>
+                <TableCell>Eligibility</TableCell>
+                <TableCell align="center">Slots left</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="center">Like</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {pageRows.map((project) => (
+                <BankRow
+                  key={project.projectId}
+                  project={project}
+                  status={projectStatuses[project.projectId]}
+                  liked={likedProjects.some((l) => l.projectId === project.project_name)}
+                  requestSent={Boolean(sentRequests[project.projectId])}
+                  onLike={handleLike}
+                  onRequest={(p) => {
+                    setSelectedProject(p);
+                    setIsRequestFormOpen(true);
+                  }}
+                />
+              ))}
+              {pageRows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} sx={{ border: "none" }}>
+                    <div className="pb-empty" style={{ border: "none" }}>
+                      <h3>No projects match your filters</h3>
+                      <p>Try clearing a filter or searching for something else.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          {filtered.length > ROWS_PER_PAGE && (
+            <div className="bank-pager">
+              <span>
+                Page {page + 1} of {pageCount}
+              </span>
+              <Button size="small" startIcon={<ArrowBackIosNewIcon fontSize="inherit" />} disabled={page === 0} onClick={() => setPage(page - 1)}>
+                Previous
+              </Button>
+              <Button size="small" endIcon={<ArrowForwardIosIcon fontSize="inherit" />} disabled={page + 1 >= pageCount} onClick={() => setPage(page + 1)}>
+                Next
+              </Button>
+            </div>
+          )}
+        </TableContainer>
+      )}
+
+      {isRequestFormOpen && selectedProject && (
         <RequestFormModal
           visible={isRequestFormOpen}
           onClose={() => setIsRequestFormOpen(false)}
           project={selectedProject}
           userId={userId}
-          selectedProject={selectedProject} // Pass selectedProject to RequestFormModal
-          draftDetails={draftDetails}
+          selectedProject={selectedProject}
+          draftDetails={null}
           setSentRequests={setSentRequests}
           sentRequests={sentRequests}
           setProjectStatuses={setProjectStatuses}

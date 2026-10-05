@@ -21,6 +21,26 @@ import { Route, Routes, useParams } from 'react-router-dom';
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
+    primary: { main: '#99ccff' },
+    secondary: { main: '#ce93d8' },
+    background: { default: '#101418', paper: '#171d24' },
+    divider: 'rgba(204, 229, 255, 0.09)',
+    text: { primary: '#ebf5ff', secondary: '#99a7bb' },
+  },
+  shape: { borderRadius: 10 },
+  typography: {
+    fontFamily: '"Montserrat", "Roboto", sans-serif',
+    button: { textTransform: 'none', fontWeight: 500 },
+  },
+  components: {
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: { root: { borderRadius: 10, paddingInline: 18 }, sizeSmall: { paddingInline: 12 } },
+    },
+    MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+    MuiChip: { styleOverrides: { root: { fontWeight: 500 } } },
+    MuiTextField: { defaultProps: { size: 'small' } },
+    MuiSelect: { defaultProps: { size: 'small' } },
   },
 });
 

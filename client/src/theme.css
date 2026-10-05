@@ -133,3 +133,173 @@
 .MuiInputLabel-root.Mui-disabled {
   -webkit-text-fill-color: var(--pb-muted) !important;
 }
+
+/* ---------- Global polish ---------- */
+body { color: var(--pb-text); }
+hr { border-color: var(--pb-border); opacity: 1; }
+::selection { background: rgba(7, 98, 235, 0.45); }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(153, 167, 187, 0.35) transparent; }
+
+/* Bootstrap / CoreUI modals */
+.modal-content {
+  background: #171d24 !important;
+  color: var(--pb-text) !important;
+  border: 1px solid var(--pb-border-strong);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.modal-header, .modal-footer { border-color: var(--pb-border) !important; padding: 16px 24px; gap: 10px; }
+.modal-footer { justify-content: flex-end; }
+.modal-footer > * { margin: 0 !important; }
+.modal-title { font-weight: 600; font-size: 1.15rem; }
+.modal-body { padding: 24px !important; margin: 0 !important; }
+.modal-backdrop { background-color: #000; }
+.btn-close { filter: invert(1) grayscale(100%) brightness(200%); opacity: 0.6; background-color: transparent !important; }
+.btn-close:hover { opacity: 1; }
+
+/* Bootstrap / CoreUI form controls */
+.form-control, .form-select {
+  background-color: rgba(20, 26, 31, 0.7) !important;
+  color: var(--pb-text) !important;
+  border: 1px solid var(--pb-border-strong) !important;
+  border-radius: 10px !important;
+}
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2399a7bb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--pb-accent) !important;
+  box-shadow: 0 0 0 3px rgba(153, 204, 255, 0.18) !important;
+}
+.form-control:disabled, .form-select:disabled {
+  background-color: rgba(20, 26, 31, 0.4) !important;
+  color: var(--pb-muted) !important;
+  -webkit-text-fill-color: var(--pb-muted);
+}
+.form-control::placeholder { color: var(--pb-muted); }
+.form-floating > label { color: var(--pb-muted) !important; }
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label { color: var(--pb-muted) !important; }
+.form-floating > .form-control ~ label::after,
+.form-floating > .form-select ~ label::after { background: transparent !important; }
+.form-select option { background: #171d24; color: var(--pb-text); }
+.invalid-feedback { color: #ffb4ab; }
+
+/* Bootstrap buttons (CoreUI CButton) */
+.btn {
+  border-radius: 10px;
+  font-weight: 500;
+  padding: 8px 18px;
+  margin: 0;
+}
+.btn-secondary { background: rgba(153, 167, 187, 0.14); border-color: transparent; color: var(--pb-text); }
+.btn-secondary:hover { background: rgba(153, 167, 187, 0.24); color: var(--pb-text); }
+.btn-primary { background: var(--pb-accent-strong); border-color: var(--pb-accent-strong); }
+.btn-success { background: #2e7d32; border-color: #2e7d32; }
+.btn-warning { background: #ed8b00; border-color: #ed8b00; color: #fff; }
+.btn-outline-secondary { color: var(--pb-accent); border-color: var(--pb-border-strong); }
+.btn-outline-secondary:hover { background: rgba(7, 98, 235, 0.15); border-color: var(--pb-accent); color: var(--pb-accent); }
+
+/* Prerequisite pills */
+.badge.rounded-pill {
+  background-color: rgba(7, 98, 235, 0.18) !important;
+  color: var(--pb-accent) !important;
+  border: 1px solid rgba(7, 98, 235, 0.4);
+  padding: 7px 10px 7px 14px !important;
+  margin: 4px 8px 4px 0 !important;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge .btn-close { width: 0.45em !important; height: 0.45em !important; margin: 0 !important; }
+
+/* Lists: no global bullets or margins */
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* ---------- MUI polish (Montserrat, softer corners, better focus) ---------- */
+.MuiButton-root { letter-spacing: 0.01em; }
+.MuiMenu-paper, .MuiPopover-paper {
+  background-image: none !important;
+  background-color: #1b222a !important;
+  border: 1px solid var(--pb-border-strong);
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45) !important;
+}
+.MuiMenuItem-root { border-radius: 8px; margin: 2px 6px !important; font-size: 0.9rem; }
+.MuiMenuItem-root.Mui-selected { background: rgba(7, 98, 235, 0.22) !important; }
+.MuiMenuItem-root:hover { background: rgba(153, 204, 255, 0.1); }
+.MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline { border-color: var(--pb-border-strong); }
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline { border-color: rgba(153, 204, 255, 0.5); }
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline { border-color: var(--pb-accent); }
+.MuiInputLabel-root { color: var(--pb-muted); }
+.MuiInputLabel-root.Mui-focused { color: var(--pb-accent); }
+.MuiDrawer-paper { background-image: none !important; background-color: #0d1115 !important; border-right: 1px solid var(--pb-border) !important; }
+.MuiListItemButton-root { margin: 4px 8px; border-radius: 10px; }
+.MuiListItemButton-root.Mui-selected { background: rgba(7, 98, 235, 0.22) !important; }
+.MuiListItemButton-root.Mui-selected .MuiListItemIcon-root { color: var(--pb-accent); }
+.MuiTooltip-tooltip { font-size: 0.75rem; }
+
+/* Tables */
+.pb-table-wrap {
+  background: var(--pb-surface);
+  border: 1px solid var(--pb-border);
+  border-radius: var(--pb-radius);
+  overflow: hidden;
+}
+.pb-table-wrap .MuiTableCell-root { border-bottom: 1px solid var(--pb-border); color: var(--pb-text); padding: 14px 16px; }
+.pb-table-wrap .MuiTableHead-root .MuiTableCell-root {
+  background: rgba(7, 98, 235, 0.08);
+  color: var(--pb-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--pb-border-strong);
+}
+.pb-table-wrap .MuiTableBody-root .MuiTableRow-root:hover { background: rgba(153, 204, 255, 0.04); }
+
+/* Toolbar used above tables / lists */
+.pb-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 14px;
+  margin-bottom: 20px;
+}
+.pb-toolbar .grow { flex: 1 1 260px; }
+.pb-toolbar .select { flex: 0 1 190px; min-width: 150px; }
+.pb-toolbar .MuiFormControlLabel-root { margin: 0 4px 0 0; }
+.pb-toolbar .MuiFormControlLabel-label { font-size: 0.85rem; color: var(--pb-muted); }
+
+.pb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pb-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+/* CoreUI buttons carry their own palette variables; keep them on-theme */
+.btn-primary {
+  --cui-btn-bg: var(--pb-accent-strong);
+  --cui-btn-border-color: var(--pb-accent-strong);
+  --cui-btn-hover-bg: #0b57d0;
+  --cui-btn-hover-border-color: #0b57d0;
+  --cui-btn-active-bg: #0b57d0;
+  background-color: var(--pb-accent-strong) !important;
+  border-color: var(--pb-accent-strong) !important;
+  color: #fff !important;
+}
+.btn-primary:hover { background-color: #0b57d0 !important; }
+.btn-outline-secondary, .btn-outline-secondary:disabled { background: transparent !important; }
+.btn:disabled { opacity: 0.5; }
+.modal-dialog { margin-top: 5vh; }
+.modal .form-floating { margin-bottom: 4px; }
+.btn-secondary {
+  --cui-btn-bg: rgba(153, 167, 187, 0.14);
+  background-color: rgba(153, 167, 187, 0.14) !important;
+  border-color: transparent !important;
+  color: var(--pb-text) !important;
+}
+.btn-secondary:hover { background-color: rgba(153, 167, 187, 0.26) !important; }
+.btn-outline-secondary { --cui-btn-color: var(--pb-text); border-color: var(--pb-border-strong) !important; color: var(--pb-text) !important; }
+.btn-outline-secondary:hover { background-color: rgba(153, 167, 187, 0.14) !important; }

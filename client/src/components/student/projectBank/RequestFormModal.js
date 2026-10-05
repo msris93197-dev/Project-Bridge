@@ -292,19 +292,21 @@ const RequestFormModal = ({
   return (
     <>
       <CModal
+        size="lg"
+        alignment="center"
         backdrop="static"
         visible={visible}
         onClose={onClose}
         aria-labelledby="RequestFormModalTitle"
       >
         <CForm
-          className="row g-3 needs-validation"
+          className="needs-validation"
           noValidate
           validated={validated}
           id="request_form"
         >
           <CModalHeader closeButton>
-            <CModalTitle id="RequestFormModalTitle">Request Form</CModalTitle>
+            <CModalTitle id="RequestFormModalTitle">Request this project</CModalTitle>
           </CModalHeader>
           <CModalBody>
             {/* Form fields */}
@@ -387,10 +389,10 @@ const RequestFormModal = ({
                 <CButton color="secondary" onClick={onClose} disabled={isLoading}>
                   Close
                 </CButton>
-                <CButton color="primary" onClick={handleSaveDraft} disabled={isLoading}>
+                <CButton color="secondary" variant="outline" onClick={handleSaveDraft} disabled={isLoading}>
                   Save Draft
                 </CButton>
-                <CButton color="warning" onClick={handleSubmit} disabled={isLoading}>
+                <CButton color="primary" onClick={handleSubmit} disabled={isLoading}>
                   Send Request
                 </CButton>
               </React.Fragment>
@@ -400,7 +402,7 @@ const RequestFormModal = ({
                   Back
                 </CButton>
                 <CButton color="success" onClick={handleConfirmSendRequest} disabled={isLoading}>
-                  Confirm Send Request
+                  Confirm and send
                 </CButton>
               </React.Fragment>
             )}

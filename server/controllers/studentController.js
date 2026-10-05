@@ -146,6 +146,8 @@ exports.getProjectsData = async (req, res) => {
             department: teacher ? teacher.department : 'Unknown',
             pre_requisites: project.pre_requisites,
             cg_cutoff: project.cg_cutoff,
+            project_slots: project.project_slots,
+            filled_slots: project.filled_slots,
             cg_eligibility: cgEligibility
         };
     });

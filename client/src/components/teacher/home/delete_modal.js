@@ -24,7 +24,7 @@ function DeleteModal({ projectId, deleteProject }) {
 
   return (
     <>
-      <Button onClick={() => setVisible(!visible)} variant="outlined" startIcon={<DeleteIcon />}>Delete</Button>
+      <Button size="small" color="error" onClick={() => setVisible(!visible)} variant="outlined" startIcon={<DeleteIcon />}>Delete</Button>
       <CModal
         backdrop="static"
         visible={visible}
@@ -32,19 +32,17 @@ function DeleteModal({ projectId, deleteProject }) {
         aria-labelledby="StaticBackdropExampleLabel"
       >
         <CModalHeader closeButton>
-          <CModalTitle id="StaticBackdropExampleLabel">DELETE PROJECT?</CModalTitle>
+          <CModalTitle id="StaticBackdropExampleLabel">Delete this project?</CModalTitle>
         </CModalHeader>
         <CModalBody id="delete_modal_body">
-          Are you sure you want to delete this project ?<br></br>
-          <br></br>
-          This process cannot be undone.
+          This will permanently remove the project and its student requests. This cannot be undone.
         </CModalBody>
         <CModalFooter>
-          <Button color="secondary" variant="outlined" onClick={() => setVisible(false)}>
-            CANCEL
+          <Button color="inherit" variant="text" onClick={() => setVisible(false)}>
+            Cancel
           </Button>
-          <Button color="primary" onClick={handleDeleteProject} variant="outlined" startIcon={<DeleteIcon />}>
-            CONFIRM DELETE
+          <Button color="error" onClick={handleDeleteProject} variant="contained" startIcon={<DeleteIcon />}>
+            Delete
           </Button>
         </CModalFooter>
       </CModal>

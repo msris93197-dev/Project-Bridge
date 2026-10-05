@@ -77,8 +77,9 @@ function ProjectForm({ saveProject, closeModal, teacherId }) {
 
   return (
     <div>
-      <h2>Add Project</h2>
-      <br></br>
+      <div className="pb-card-title" style={{ marginBottom: 20 }}>
+        <h2>New project</h2>
+      </div>
       <CForm
         // style={{color: 'gray'}}
         className="row g-3 needs-validation"
@@ -219,23 +220,14 @@ function ProjectForm({ saveProject, closeModal, teacherId }) {
               </CBadge>
             ))}
           </ul>
-          <CRow>
-            <CCol></CCol>
-            <CCol></CCol>
-            <CCol></CCol>
-            <CCol></CCol>
-            <CCol></CCol>
-            <CCol>
-              <Button onClick={closeModal} variant="outlined" color="secondary">
-                Cancel
-              </Button>
-            </CCol>
-            <CCol>
-              <Button type="submit" variant="outlined" color="success">
-                Create
-              </Button>
-            </CCol>
-          </CRow>
+          <div className="pb-form-actions">
+            <Button onClick={closeModal} variant="text" color="inherit">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained" color="success">
+              Create project
+            </Button>
+          </div>
         </CContainer>
       </CForm>
     </div>

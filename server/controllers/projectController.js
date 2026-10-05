@@ -1,4 +1,5 @@
 const projectdb = require("../model/projectSchema");
+const requestsdb = require("../model/requestSchema");
 
 const validateProject = ({ projectName, projectSlots, cgpaCutoff }) => {
   if (!projectName || !String(projectName).trim()) return "Project name is required";
@@ -98,6 +99,7 @@ exports.deleteProject = async (req, res) => {
         if (!deletedProject) {
           return res.status(404).json({ message: 'Project not found' });
         }
+        await requestsdb.deleteOne({ projectId });
         res.json({ message: 'Project deleted successfully' });
       } catch (error) {
         console.error('Error deleting project:', error);

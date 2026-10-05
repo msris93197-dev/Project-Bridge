@@ -1,51 +1,36 @@
-td, th{
-    color: rgb(255, 255, 255) !important;
-}
-/* 
-.css-rqglhn-MuiTable-root {
-    display: table;
-    width: 90% !important;
-    border-collapse: collapse;
-    border-spacing: 0;
-    position: relative;
-    -webkit-backdrop-filter: blur(37px);
-    backdrop-filter: blur(37px);
-    border-radius: 18px;
-    padding: 1%;
-    border-color: rgba(59, 74, 89, 0.2);
-    
-} */
-
-/* .css-11xur9t-MuiPaper-root-MuiTableContainer-root {
-    background-color: inherit !important;
-} */
-
-#collapse_btn{
-    color: white;
-}
-#main_table {
-    position: relative;
-    display: flex;
-    -webkit-box-pack: center;
-    justify-content: center;
-    padding: 24px;
-    background-color: rgba(31, 38, 46, 0.15) !important;
-    border: 1px solid rgba(59, 74, 89, 0.2) !important;
-    margin-top: 2%;
-    margin-bottom: 4%;
-    width: 90%;
-    /* color: white; */
-    position: relative;
-    left: 5%;
+.bank-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 28px;
+  padding: 16px 20px;
+  margin: 4px 0 8px 40px;
+  border-radius: 12px;
+  background: rgba(7, 98, 235, 0.06);
+  border: 1px solid var(--pb-border);
+  font-size: 0.9rem;
 }
 
-#clr_btn{
-    margin-top: 0% !important;
-    margin-left: 8% !important;
-    margin-right: 0% !important;
+.bank-detail .full { grid-column: 1 / -1; }
+.bank-detail .label {
+  display: block;
+  color: var(--pb-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
 }
 
-#pagination_btn{
-    margin: 0% !important;
-    margin-left: 2% !important;
+.bank-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--pb-border);
+  color: var(--pb-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  .bank-detail { grid-template-columns: 1fr; margin-left: 0; }
 }
