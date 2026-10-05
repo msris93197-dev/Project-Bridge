@@ -1,0 +1,57 @@
+/* form{
+    color: gray;
+} */
+.badge {
+    --bs-badge-padding-x: 0.65em;
+    --bs-badge-padding-y: 0.35em;
+    --bs-badge-font-size: 0.9em;
+}
+
+#project_modalForm{
+    background-color: rgba(31, 38, 46, 0.1);
+    /* opacity: 1; */
+    backdrop-filter: blur(37px);
+    color: white;
+    /* border: white; */
+    border-radius: 18px;
+    padding: 1%;
+    border-color: rgba(59, 74, 89, 0.2);
+}
+
+#floatingInput, #floatingTextarea, #pre_req_input{
+    /* background-color: inherit; */
+    background-color: rgba(20, 26, 31, 0.5);
+    color: whitesmoke;
+    border-color:rgba(59, 74, 89, 0.2) ;
+}
+
+.form-floating>.form-control-plaintext~label::after, .form-floating>.form-control:focus~label::after, .form-floating>.form-control:not(:placeholder-shown)~label::after, .form-floating>.form-select~label::after {
+    background-color: inherit !important;
+}
+
+.form-floating>label{
+    color: rgb(165 165 165) !important;
+}
+
+.css-sxix9q-MuiButtonBase-root-MuiButton-root{
+    border: 1px solid rgb(0 255 13 / 50%) !important;
+    color: #21bb29 !important;
+}
+
+.css-1l9sosn-MuiButtonBase-root-MuiButton-root{
+    border: 1px solid rgb(218 0 255 / 50%) !important;
+    color: #941da9 !important;
+}
+
+#pre_req_badge{
+    margin-top: 1% !important;
+    padding: 1% !important;
+}
+
+#pre_req_list{
+    margin-top: 0% !important;
+}
+
+#pre_req_grp{
+    margin-bottom: 0 !important;
+}

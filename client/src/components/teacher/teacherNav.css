@@ -1,0 +1,53 @@
+#main{
+    width: 90%;
+    /* background-color: rgb(203, 206, 208); */
+    border-radius: 60px; 
+    /* margin-top: 1%; */
+    /* background-color: rgba(20, 26, 31, 0.5); */
+    padding: 2px;
+    padding-left: 5%;
+    padding-right: 3%;
+    /* border-color:rgba(59, 74, 89, 0.2) ; */
+    border-style: solid;
+    border-color: rgba(204, 229, 255, 0.08);
+    border-width: 0px 1px thin;
+    background-color: rgba(16, 20, 24, 0.8);
+    color: rgb(153, 167, 187);
+}
+#dropdown-basic{
+    background-color: inherit;
+    border: none;
+}
+
+#main_nav{
+    background-color: inherit !important;
+}
+
+.navbar-brand{
+    color: #fefefe !important;
+}
+
+#user_img{
+    margin: 0% !important;
+}
+
+.css-eqeipb-MuiPaper-root-MuiPopover-paper-MuiMenu-paper {
+    padding-top: 0%;
+    top: 18%;
+    transform-origin: 118px 0px;
+    width: 9%;
+    right: 14%;
+}
+.css-eqeipb-MuiPaper-root-MuiPopover-paper-MuiMenu-paper::before {
+    content: none !important;
+}
+
+.css-eqeipb-MuiPaper-root-MuiPopover-paper-MuiMenu-paper {
+    color: rgb(153, 204, 255) !important;
+    background-color: rgb(28 50 72 / 40%) !important;
+    border-color: rgb(0, 97, 194) !important;
+}
+
+.css-kk1bwy-MuiButtonBase-root-MuiMenuItem-root:hover {
+    background-color: rgb(7 98 235 / 25%) !important;
+}

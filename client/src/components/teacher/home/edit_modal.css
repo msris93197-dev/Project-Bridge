@@ -1,0 +1,50 @@
+.modal-content {
+    color: whitesmoke !important;
+    background-color: rgba(20, 26, 31) !important;
+}
+
+.modal-body {
+    margin-top: 5% !important;
+}
+
+.form-floating>.form-control, .form-floating>.form-control-plaintext {
+    padding: 1rem .75rem;
+    background-color: rgba(20, 26, 31, 0.5);
+    color: whitesmoke;
+    border-color: rgba(59, 74, 89, 0.2);
+}
+
+.form-floating>.form-control, .form-floating>.form-control-plaintext, .form-floating>.form-select {
+    height: calc(3.5rem + calc(var(--bs-border-width)* 2));
+    min-height: calc(3.5rem + calc(var(--bs-border-width)* 2));
+    line-height: 1.25;
+    background-color: rgba(20, 26, 31, 0.5);
+    color: whitesmoke;
+    border-color: rgba(59, 74, 89, 0.2);
+}
+
+ul{
+    padding-top: 0% !important;
+}
+
+.badge{
+    padding: 2% !important;
+    margin-right: 5%;
+    margin-top: 2%;
+}
+
+.form-floating>.form-control-plaintext:focus, .form-floating>.form-control-plaintext:not(:placeholder-shown), .form-floating>.form-control:focus, .form-floating>.form-control:not(:placeholder-shown) {
+    background-color: inherit;
+    color: whitesmoke;
+}
+
+.btn-close{
+    background-color: whitesmoke !important;
+     &:hover{
+        background-color: rgb(255, 255, 255) !important;
+     }
+}
+
+#delete_modal_body{
+    margin-top: 0 !important;
+}

@@ -1,0 +1,65 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@coreui/react": "^4.11.1",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
+    "@expo-google-fonts/libre-franklin": "^0.2.3",
+    "@fontsource/montserrat": "^5.0.17",
+    "@fontsource/roboto": "^5.0.12",
+    "@mui/icons-material": "^5.15.12",
+    "@mui/material": "^5.15.12",
+    "@mui/styled-engine-sc": "^6.0.0-alpha.17",
+    "@mui/x-charts": "^7.3.1",
+    "@mui/x-data-grid": "^7.3.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.6.8",
+    "bootstrap": "^5.3.3",
+    "firebase": "^10.11.0",
+    "primereact": "^10.5.1",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.10.1",
+    "react-collapsed": "^4.1.2",
+    "react-dom": "^18.2.0",
+    "react-imask": "^7.6.0",
+    "react-modal": "^3.16.1",
+    "react-router-dom": "^6.0.2",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.12.6",
+    "sass": "^1.71.1",
+    "styled-components": "^6.1.8",
+    "web-vitals": "^2.1.4",
+    "websocket": "^1.0.34"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+  }
+}

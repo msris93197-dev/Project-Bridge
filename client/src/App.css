@@ -1,0 +1,9 @@
+#root{
+    background-color: rgb(16, 20, 24) !important;
+    color: white;
+    font-family: "Montserrat";
+    /* font-family: "Roboto", sans-serif; */
+}
+:root{
+    background-color:rgb(16, 20, 24) !important;
+}

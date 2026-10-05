@@ -1,0 +1,16 @@
+/* body{
+    background-color: rgb(16, 20, 24);
+} */
+/* .bg-body-tertiary {
+    --bs-bg-opacity: 0 !important;
+} */
+#main{
+    width: 80%;
+    /* background-color: rgb(203, 206, 208); */
+    border-radius: 25px; 
+    /* margin-top: 1%; */
+}
+#dropdown-basic{
+    background-color: inherit;
+    border: none;
+}
